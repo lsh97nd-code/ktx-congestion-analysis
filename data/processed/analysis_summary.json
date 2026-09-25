@@ -1,0 +1,46 @@
+{
+  "period": {
+    "start": "2010-01-01",
+    "end": "2023-12-01"
+  },
+  "record_count": 13906,
+  "station_count": 73,
+  "value_definition": "역·방향별 월 승차인원",
+  "value_stats": {
+    "average": 57832.72,
+    "maximum": 1484629,
+    "minimum": 0
+  },
+  "monthly_total": {
+    "latest_month": "2023-12-01",
+    "latest_month_boardings": 6839626,
+    "previous_month": "2023-11-01",
+    "previous_month_boardings": 6642320,
+    "mom_change_pct": 2.97
+  },
+  "recent_trend": {
+    "method": "최근 12개월 월평균 총승차인원 vs 직전 12개월 월평균 총승차인원",
+    "threshold_pct": 3.0,
+    "latest_12_month_avg": 6342093.08,
+    "previous_12_month_avg": 5318481.33,
+    "change_pct": 19.25,
+    "trend": "증가"
+  },
+  "rail_hourly_pattern": {
+    "note": "KTX 전용 데이터가 아니라 철도 전체의 평일/토요일/일요일 시간대 패턴 보조지표",
+    "peaks": {
+      "saturday": {
+        "peak_hour_slot": "10:00~10:59",
+        "peak_passengers": 44369
+      },
+      "sunday": {
+        "peak_hour_slot": "15:00~15:59",
+        "peak_passengers": 43525
+      },
+      "weekday_avg": {
+        "peak_hour_slot": "18:00~18:59",
+        "peak_passengers": 30029
+      }
+    }
+  }
+}

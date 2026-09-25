@@ -23,15 +23,25 @@
 - [x] 기본 폴더 구조 생성 (`backend`, `frontend`, `data/raw`, `data/processed`, `docs/images`, `scripts`)
 - [x] Python 가상환경(`venv`) 생성 및 활성화 확인 (`(venv)` 프롬프트 확인)
 - [x] `backend/requirements.txt` 패키지 설치 완료
-- [ ] `.gitignore` 파일명 교정 필요 (`gitignore` → `.gitignore`)
+- [x] `.gitignore` 파일명 교정 완료 및 `venv/` 제외 확인 (`git check-ignore -v venv/`)
 - [x] Git 저장소 초기화 (`git init`) 및 `main` 브랜치 확인
 - [x] KTX 핵심 데이터 1차 확보
 - [x] 철도 시간대 패턴 보조 데이터 확보 (24시간대)
 - [x] 원본 CSV 3개를 `data/raw`에 영문 파일명으로 배치
-- [ ] 원본 데이터(`raw`)와 가공 데이터(`processed`) 분리
+- [x] 원본 데이터(`raw`)와 가공 데이터(`processed`) 분리 및 가공 CSV 생성
 - [x] 데이터 100개 이상 확보 여부 확인 (핵심 CSV 6,953행)
-- [ ] `preprocess_data.py` 코드리뷰 개선안 반영 후 실행
-- [ ] 기본 통계/추세 계산 스크립트 작성
+- [x] `preprocess_data.py` 1차 Code Review 반영 후 실행 성공
+- [x] `ktx_demand.csv` 생성 확인 (**13,906행 × 7열**)
+- [x] `rail_hourly_pattern_2025.csv` 생성 확인 (**72행 × 3열**)
+- [x] `preprocess_data.py` 2차 Code Review 소규모 개선 반영 및 재실행
+- [x] 전처리 완료 상태 첫 Git Commit (`feat: preprocess KTX demand data`)
+- [x] `analyze_data.py` 작성 및 실행 성공
+- [x] `analysis_summary.json` 생성 확인 및 실제 수치 검증
+- [x] `station_summary.csv` 생성 확인
+- [x] `analyze_data.py` Code Review 내용 검토
+- [x] `analyze_data.py` Code Review 유효 개선사항 반영 및 재실행
+- [x] Firestore 업로드용 `monthly_summary.csv` 생성 확인 (**168행 × 3열**)
+- [ ] 분석 단계 두 번째 Git Commit
 - [ ] FastAPI 로컬 실행
 - [ ] Firestore 연결
 - [ ] GPT Context Injection 구현
@@ -39,106 +49,107 @@
 - [ ] Render / Vercel 배포
 - [ ] 보너스 기능 및 최종 README 정리
 
-> **다음 작업:** 가상환경, 패키지 설치, 원본 CSV 배치, Git 초기화와 `main` 브랜치 설정까지 완료했습니다. 현재 `git status`에서 파일명이 `gitignore`로 보이므로 먼저 **`.gitignore`로 파일명을 교정**합니다. 그다음 Claude Code Review의 유효한 개선사항을 반영한 `scripts/preprocess_data.py`를 실행하고, `data/processed/ktx_demand.csv`와 `rail_hourly_pattern_2025.csv` 생성 결과를 검증합니다.
+> **다음 작업:** `analyze_data.py` Code Review 반영본 재실행과 `monthly_summary.csv` 생성까지 완료했습니다. 실제 파일은 **168행 × 3열**이며 `date`, `value`, `memo` 구조가 정상입니다. 이제 **processed 결과 확인 → 분석 단계 두 번째 Git Commit → Firebase 프로젝트 생성 → Firestore 연결** 순서로 진행합니다.
 
 ---
 
-## 지금 실행할 명령 — Git 초기화 후 / 전처리 직전
+## 지금 실행할 명령 — Firestore 연결 직전
 
 현재 확인된 상태:
 
-- `(venv)` 표시 → **가상환경 활성화 정상**
-- `requirements.txt` 설치 → **완료**
-- `git init` → **완료**
-- `git branch -M main` → **완료**
-- `git status` → **정상**
-- 아직 첫 Commit은 없음
-- `README.md`, `backend/`, `data/`, `scripts/` 등이 Untracked 상태
-- **주의:** 화면의 파일명이 `.gitignore`가 아니라 `gitignore`로 보임
+- `preprocess_data.py` 실행 완료
+- 첫 Git Commit 완료
+- `analyze_data.py` Code Review 반영본 실행 완료
+- `analysis_summary.json` 생성 완료
+- `station_summary.csv` 생성 완료
+- `monthly_summary.csv` 생성 완료
+- `monthly_summary.csv` 실제 구조: **168행 × 3열**
+- 컬럼: `date`, `value`, `memo`
+- 첫 행: `2010-01-01, 3219534, 전국 KTX 월 총승차인원`
+- 마지막 행: `2023-12-01, 6839626, 전국 KTX 월 총승차인원`
 
-### 1) `gitignore` → `.gitignore`로 교정
+### 1) VS Code의 Rainbow CSV 확장 알림
 
-프로젝트 루트에서 실행합니다.
+CSV를 보기 쉽게 하려면 **`설치`를 선택해도 됩니다.**
 
-```powershell
-Rename-Item .\gitignore .gitignore
-git status
-```
+Rainbow CSV는 CSV 열을 색상으로 구분해 보여주는 편의 확장일 뿐이며,
+프로젝트 실행·과제 제출·Firestore 연동에는 필수가 아닙니다.
 
-`git status`에서 `.gitignore`가 보이면 정상입니다.
+> 설치 여부는 코드나 데이터 결과에 영향을 주지 않습니다.
 
-> `venv/`가 목록에 나오지 않아도 이상하지 않습니다. `.gitignore` 또는 전역 Git ignore 규칙에 의해 제외될 수 있습니다.
-
-확인용:
-
-```powershell
-git check-ignore -v venv/
-```
-
-### 2) Claude Code Review 반영본으로 `preprocess_data.py` 교체
-
-사진의 Claude Code Review에서 유효한 개선사항을 다음처럼 반영합니다.
-
-| Code Review 제안 | 반영 |
-|---|---|
-| `print` → `logging` | 반영 |
-| Wide → Long 변환 중복 제거 | `DIRECTION_MAP` + 공통 함수로 반영 |
-| 경로 상수 정리 | `DataPaths` 설정 객체로 반영 |
-| `errors="raise"` 오류 메시지 개선 | 날짜/숫자 변환 Helper로 반영 |
-| `memo` 필요성 검토 | **삭제하지 않고 유지** — 과제의 `(date, value, memo)` CRUD 구조와 직접 연결되기 때문 |
-
-> 즉, Code Review를 무조건 전부 수용하는 것이 아니라 **과제 요구사항과 충돌하지 않는 개선은 반영하고, `memo`는 과제 구조 때문에 유지**합니다.
-
-### 3) 전처리 스크립트 실행
-
-```powershell
-python .\scripts\preprocess_data.py
-```
-
-정상 실행 시 목표 결과:
-
-```text
-data/processed/ktx_demand.csv
-→ 13,906행 × 7열
-
-data/processed/rail_hourly_pattern_2025.csv
-→ 72행 × 3열
-```
-
-### 4) 생성 결과 확인
+### 2) 가공 결과 파일 확인
 
 ```powershell
 Get-ChildItem .\data\processed
 ```
 
-추가 확인:
-
-```powershell
-python -c "import pandas as pd; a=pd.read_csv(r'.\data\processed\ktx_demand.csv'); b=pd.read_csv(r'.\data\processed\rail_hourly_pattern_2025.csv'); print(a.shape); print(b.shape)"
-```
-
-예상:
+다음 파일이 보이면 정상입니다.
 
 ```text
-(13906, 7)
-(72, 3)
+analysis_summary.json
+ktx_demand.csv
+monthly_summary.csv
+rail_hourly_pattern_2025.csv
+station_summary.csv
 ```
 
-### 5) 아직 첫 Commit은 하지 않아도 됨
+### 3) `monthly_summary.csv` 행 수까지 확인
 
-먼저 전처리 결과를 확인한 뒤 다음 단계에서:
+```powershell
+python -c "import pandas as pd; df=pd.read_csv(r'.\data\processed\monthly_summary.csv'); print(df.shape); print(df.head(2)); print(df.tail(2))"
+```
+
+정상 결과의 핵심:
+
+```text
+(168, 3)
+```
+
+### 4) 분석 단계 두 번째 Commit
 
 ```powershell
 git add .
 git status
-git commit -m "feat: preprocess KTX demand data"
+git commit -m "feat: add KTX demand analysis summary"
 ```
 
-순서로 첫 Commit을 만드는 것을 권장합니다.
+Commit 성공 후 확인:
 
-### 참고 — `frontend/`, `docs/images/`가 `git status`에 안 보이는 이유
+```powershell
+git log --oneline -2
+```
 
-Git은 **빈 폴더 자체를 추적하지 않습니다.** 현재 `frontend/`, `docs/images/`가 비어 있다면 `git status`에 나타나지 않는 것이 정상입니다. 나중에 실제 파일이 들어가면 자동으로 추적 대상이 됩니다.
+예상 흐름:
+
+```text
+<새 커밋> feat: add KTX demand analysis summary
+<이전 커밋> feat: preprocess KTX demand data
+```
+
+### 5) 그다음 단계 — Firebase / Firestore
+
+두 번째 Commit이 성공하면 Firestore 연결을 시작합니다.
+
+우선 Firestore `data` 컬렉션에는 **13,906건 전체가 아니라 `monthly_summary.csv`의 168건**을 넣는 구조로 진행합니다.
+
+```text
+data/
+  └─ 168개 월별 대표 시계열
+     - date
+     - value
+     - memo
+```
+
+원본 13,906건은 CSV로 유지하고, 상세 분석 결과는 별도 컬렉션으로 분리합니다.
+
+```text
+station_summaries/
+rail_hourly_patterns/
+analysis_summary/
+conversations/
+```
+
+> **현재는 Firebase Console 작업을 시작하기 전에 두 번째 Git Commit까지 먼저 완료하는 것을 권장합니다.**
 
 ---
 
@@ -165,9 +176,44 @@ Git은 **빈 폴더 자체를 추적하지 않습니다.** 현재 `frontend/`, `
    - 이번 과제의 기본 데이터 구조가 `(date, value, memo)`이므로
    - Firestore CRUD 및 AI Context에 설명 정보를 제공하는 용도로 유지
 
+### 2차 Code Review 추가 검토
+
+추가 리뷰에서 다음 제안이 확인되었습니다.
+
+| 추가 제안 | 결정 | 이유 |
+|---|---|---|
+| `logging.basicConfig()`를 실행 시점으로 이동 | **반영** | 다른 모듈에서 import할 때 전역 로깅 설정에 미치는 영향을 줄임 |
+| `memo`를 f-string + `apply()`로 변경 | **미반영** | 현재 벡터화 방식이 더 빠르고 충분히 명확함 |
+| 요일 매핑을 `DAY_TYPE_MAP`으로 상수화 | **반영** | `DIRECTION_MAP`과 구조를 맞춰 일관성 향상 |
+
 ### 반영 원칙
 
 > 외부 Code Review는 참고하되, **과제 요구사항·실제 데이터 구조와 충돌하지 않는 제안만 채택**합니다.
+
+## analyze_data.py Code Review 검토
+
+첨부한 `analyze_data.py 코드 리뷰.jpg`의 내용을 확인했습니다.
+
+### 잘 된 점
+
+- 추세 판단 임계값을 `TREND_THRESHOLD_PCT`로 분리
+- `previous_12_avg == 0` 상황을 처리하여 ZeroDivisionError 방어
+- `period`, `record_count`, `value_stats`, `monthly_total`, `recent_trend`처럼 구조화된 JSON Summary 생성
+- 시간대 보조자료 부재 시 핵심 KTX 분석을 계속하는 방어적 처리
+- 분석 결과가 API/System Prompt에서 바로 쓰기 좋은 구조
+
+### Code Review 개선 제안과 결정
+
+| 제안 | 결정 | 이유 |
+|---|---|---|
+| `require_columns()`를 공통 `utils.py`로 분리 | **추후 반영** | 중복 제거에는 좋지만 Backend 공통 유틸리티 작성 시 함께 정리 |
+| `12`, `24` 매직 넘버 상수화 | **반영** | 추세 기간 변경이 쉬워지고 의미가 명확해짐 |
+| 큰 `analyze_ktx()` 함수 분할 | **반영** | 로드/월집계/추세/역집계/Summary 생성을 각각 테스트하기 쉬움 |
+| 전월 대비 증감률 계산 함수화 | **반영** | 동일한 0 나눗셈 방어 로직 재사용 가능 |
+| 구조화 Summary 유지 | **유지** | FastAPI 응답과 System Prompt Context에 적합 |
+
+> Code Review는 전반적으로 높은 완성도로 평가했고, 개선점도 오류 수정이라기보다 **유지보수성·가독성 향상을 위한 리팩터링**에 가깝습니다.
+
 
 
 ## KTX 데이터 선정 결정 — 1차
@@ -661,6 +707,39 @@ AI와의 대화를 Firestore `conversations` 컬렉션에 저장하고, 이전 �
 
 > **힌트:** “왜 82점인지” 설명할 수 있도록 실제 점수 계산 근거를 적습니다. 아직 결정하지 않았다면 구현 후 확정하세요.
 
+### 현재 구현 완료된 기본 분석 Summary
+
+```text
+기간: 2010-01-01 ~ 2023-12-01
+가공 레코드: 13,906
+정차역: 73개
+value: 역·방향별 월 승차인원
+
+평균: 57,832.72
+최대: 1,484,629
+최소: 0
+
+2023-12 총승차인원: 6,839,626
+2023-11 총승차인원: 6,642,320
+전월 대비: +2.97%
+
+최근 12개월 월평균: 6,342,093.08
+직전 12개월 월평균: 5,318,481.33
+변화율: +19.25%
+최근 추세: 증가
+```
+
+최근 추세 판정:
+
+```text
+변화율 >= +3% → 증가
+변화율 <= -3% → 감소
+그 사이          → 유지
+```
+
+> 이 Summary는 `analysis_summary.json`의 실제 실행 결과를 기준으로 작성했습니다.
+
+
 ---
 
 # 3. 데이터 선정 및 분석
@@ -710,21 +789,29 @@ AI와의 대화를 Firestore `conversations` 컬렉션에 저장하고, 이전 �
 
 **[사용자 작성 필요] 실제 수행한 것만 체크하고 설명을 추가하세요.**
 
-- [ ] 날짜 형식 통일
-- [ ] 결측치 확인/처리
-- [ ] 중복 데이터 제거
+- [x] 날짜 형식 통일 (`YYYY-MM` → `YYYY-MM-01`)
+- [x] 결측치 확인 (핵심 원본 0건)
+- [x] 완전 중복 여부 확인 (핵심 원본 0건, 제거 불필요)
 - [ ] 역/노선명 표준화
-- [ ] 상행/하행 또는 방향 구분
+- [x] 상행/하행을 `up` / `down` Long Format으로 변환
 - [ ] 요일 파생변수 생성
 - [ ] 시간대 파생변수 생성
 - [ ] 공휴일/연휴 여부 생성
 - [ ] 정책 변화 구간 변수 생성
 - [ ] 이상치 확인
-- [ ] 기타: `[작성]`
+- [x] 기타: 인원 컬럼 숫자형 검증, 필수 컬럼 검증, CSV 인코딩 자동 시도
 
 ```text
 전처리 설명:
-[무엇을 왜 어떻게 처리했는지 작성]
+1. 공공데이터 CSV를 cp949, utf-8-sig, euc-kr, utf-8 순서로 읽기 시도
+2. 필수 컬럼 존재 여부 검증
+3. 운행년월을 YYYY-MM-01 날짜 형식으로 통일
+4. 승·하차 인원 컬럼을 숫자형으로 검증
+5. 상행/하행 Wide 데이터를 Long Format으로 변환
+6. value는 승차인원(boardings)으로 지정
+7. 과제 CRUD 구조와 AI 설명에 사용할 memo 생성
+8. 시간대 보조자료는 24시간대 × 3요일유형을 72행 Long Format으로 변환
+9. UTF-8-SIG CSV로 data/processed에 저장
 ```
 
 > **힌트:** Notebook/Python 전처리 코드에서 실제 수행한 작업을 순서대로 적습니다.

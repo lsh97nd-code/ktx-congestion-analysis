@@ -1,0 +1,6 @@
+pandas
+fastapi
+uvicorn
+firebase-admin
+openai
+python-dotenv

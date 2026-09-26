@@ -60,6 +60,8 @@
 - [x] Firestore 업로드 검증 성공 (`target_documents=168`)
 - [x] Firebase Console에서 `data` 컬렉션 및 대표 문서 필드 확인
 - [x] `코드리뷰어.txt` 추가 제언 검토 완료 (선택 개선, 현재 추가 수정 불필요)
+- [x] Firestore 단계 세 번째 Git Commit 완료 (`feat: seed Firestore with KTX monthly data`, commit `1e12ae2`)
+- [ ] 세 번째 Commit 이후 최종 `git status` 확인 (Commit 직전 `frontend/`가 Untracked로 보였으므로 확인 필요)
 - [ ] FastAPI 로컬 실행
 - [x] Firestore 연결 및 초기 데이터 적재 완료 (`data` 컬렉션 168문서)
 - [ ] GPT Context Injection 구현
@@ -67,141 +69,72 @@
 - [ ] Render / Vercel 배포
 - [ ] 보너스 기능 및 최종 README 정리
 
-> **다음 작업:** Firestore `data` 컬렉션에 `monthly_summary.csv` **168건 업로드와 재검증까지 완료**했습니다. `코드리뷰어.txt`의 두 제언은 모두 타당하지만 선택 사항입니다. 첫 번째 로깅 제언은 현재 `Seed 데이터 검증 완료 | rows=168, first=2010-01-01, last=2023-12-01` 로그로 이미 시간 범위를 확인할 수 있어 추가 수정 없이 유지합니다. 두 번째 `verify_upload` 분리 제언은 수십만 건 규모의 운영 최적화 아이디어이므로 현재 168건 과제에서는 검증을 같은 스크립트 안에 유지하는 편이 더 안전합니다. 이제 **세 번째 Git Commit → FastAPI Backend 기본 구조 생성 → `/api/data` CRUD → `/api/data/summary`** 순서로 진행합니다.
+> **다음 작업:** 세 번째 Git Commit `1e12ae2`까지 정상 완료했습니다. 다만 Commit 직전 `git status`에서 **`frontend/`가 Untracked files로 남아 있었기 때문에**, 아직 `nothing to commit, working tree clean`이라고 확정할 수는 없습니다. 먼저 `git status`를 다시 실행하고, `frontend/`가 남아 있으면 내부 파일을 확인한 뒤 필요한 파일인지 판단합니다. 작업 트리가 정리되면 **FastAPI Backend 기본 구조 생성**으로 넘어갑니다.
 
 ---
 
-## 지금 할 일 — Firestore 단계 세 번째 Git Commit
+## 지금 할 일 — 세 번째 Commit 후 Git 상태 최종 확인
 
-현재 실제 확인된 상태:
-
-```text
-seed_firestore.py 실행: 성공
-Seed 데이터 검증: rows=168
-기간: 2010-01-01 ~ 2023-12-01
-Batch 업로드: 168 / 168
-Firestore writes: 168
-Firestore 검증: target_documents=168
-Firebase Console data 컬렉션: 생성 확인
-대표 문서 2010-01-01:
-  date = "2010-01-01"
-  value = 3219534
-  memo = "전국 KTX 월 총승차인원"
-```
-
-즉, Firestore 초기 데이터 적재 단계는 완료되었습니다.
-
-### `코드리뷰어.txt` 추가 제언 판단
-
-첨부 리뷰는 현재 코드를 **매우 훌륭하다고 평가한 뒤 운영 환경용 선택 팁 2개**를 제안합니다.
-
-#### 1) `verify_upload()` 성공 로그에 시간 범위 추가
-
-**판단: 좋은 제안이지만 지금 추가 수정은 필수 아님**
-
-현재 실행 로그에서 이미 다음처럼 업로드 전 검증 단계에 시간 범위가 출력됩니다.
+현재 실제 확인된 Commit 기록:
 
 ```text
-Seed 데이터 검증 완료 | rows=168, first=2010-01-01, last=2023-12-01
-```
-
-따라서 이번 과제에서는 로그만 보고도 범위를 확인할 수 있습니다.
-
-`verify_upload()` 성공 로그에 동일한 범위를 한 번 더 출력하면 조금 더 친절하지만,
-기능 안정성에는 변화가 없으므로 현재 코드는 그대로 유지합니다.
-
-#### 2) 대용량일 때 `verify_upload()`를 별도 스크립트로 분리
-
-**판단: 현재는 미반영**
-
-리뷰 자체가 **수십만 건 데이터에서 업로드 속도를 더 높여야 할 때** 고려하는 운영 최적화라고 설명합니다.
-
-현재 Seed 대상은 168건이므로:
-
-```text
-업로드
-→ 즉시 검증
-→ 성공 확인
-```
-
-을 한 스크립트에서 수행하는 편이 과제 검증과 오류 발견에 더 유리합니다.
-
-따라서 지금은 분리하지 않습니다.
-
-### 1) Commit 전 상태 확인
-
-```powershell
-git status
-```
-
-서비스 계정 비밀키인:
-
-```text
-secrets/firebase-service-account.json
-```
-
-이 목록에 나타나면 안 됩니다.
-
-현재 변경 대상으로 보이는 것이 자연스러운 파일:
-
-```text
-modified: .gitignore
-modified: README.md
-new file: scripts/seed_firestore.py
-```
-
-### 2) 필요한 파일만 Stage
-
-```powershell
-git add .gitignore README.md scripts/seed_firestore.py
-```
-
-### 3) Stage 결과 확인
-
-```powershell
-git status
-```
-
-`Changes to be committed` 아래에 위 3개 파일만 있는지 확인합니다.
-
-### 4) 세 번째 Git Commit
-
-```powershell
-git commit -m "feat: seed Firestore with KTX monthly data"
-```
-
-### 5) Commit 기록 확인
-
-```powershell
-git log --oneline -3
-```
-
-예상 흐름:
-
-```text
-<새 해시> feat: seed Firestore with KTX monthly data
+1e12ae2 feat: seed Firestore with KTX monthly data
 e79ec21 feat: add KTX demand analysis summary
 7ea252b feat: preprocess KTX demand data
 ```
 
-### 6) 작업 트리 확인
+세 번째 Commit 자체는 정상 완료했습니다.
+
+다만 **Commit 직전 `git status`에서 `frontend/`가 Untracked files로 표시**되어 있었습니다.
+
+따라서 아직 아래 상태라고 단정하지 않습니다.
+
+```text
+nothing to commit, working tree clean
+```
+
+### 1) 지금 바로 최종 Git 상태 확인
 
 ```powershell
 git status
 ```
 
-정상적인 최종 상태:
+#### A. 아래처럼 나오면 완전히 정상
 
 ```text
 On branch main
 nothing to commit, working tree clean
 ```
 
-### Commit 다음 개발 단계
+이 경우 바로 FastAPI Backend 단계로 넘어갑니다.
 
-세 번째 Commit 성공 후에는 **FastAPI Backend 기본 구조**를 만듭니다.
+#### B. `frontend/`가 계속 보이면
 
-우선 다음 순서로 진행합니다.
+예:
+
+```text
+Untracked files:
+  frontend/
+```
+
+이 경우 **바로 `git add frontend/` 하지 말고**, 먼저 무엇이 들어 있는지 확인합니다.
+
+```powershell
+Get-ChildItem .\frontend -Force -Recurse
+```
+
+현재 Frontend 구현은 아직 시작하지 않았으므로,
+의도하지 않은 임시 파일이라면 삭제하고,
+향후 사용할 기본 파일이라면 내용을 확인한 뒤 Commit 여부를 결정합니다.
+
+> Git은 완전히 빈 폴더 자체는 추적하지 않습니다.  
+> 따라서 `frontend/`가 Untracked로 보인다면 그 안에 최소 하나 이상의 파일이 있다는 뜻입니다.
+
+### 2) 작업 트리가 깨끗해진 뒤 다음 단계
+
+다음은 **FastAPI Backend 기본 구조 생성**입니다.
+
+우선 구현 순서:
 
 ```text
 backend/main.py
@@ -215,7 +148,19 @@ backend/main.py
 → /api/data/summary
 ```
 
-> 아직 GPT API와 Frontend로 넘어가지 않습니다. 먼저 Firestore 기반 Data API를 완성하고 검증합니다.
+### 3) 다음 Commit은 언제?
+
+FastAPI 앱 초기화와 `/docs` 실행까지 확인한 후
+다음 Git Commit을 만드는 편이 좋습니다.
+
+예상 Commit 단위:
+
+```text
+feat: initialize FastAPI backend
+```
+
+> 아직 GPT API, conversations, Frontend는 건드리지 않습니다.
+> 먼저 Firestore 기반 Data API를 안정적으로 완성합니다.
 
 ---
 

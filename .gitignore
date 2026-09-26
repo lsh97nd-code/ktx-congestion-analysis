@@ -9,3 +9,6 @@ __pycache__/
 serviceAccountKey*.json
 .DS_Store
 Thumbs.db
+secrets/
+*firebase-adminsdk*.json
+serviceAccountKey*.json

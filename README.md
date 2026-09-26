@@ -40,116 +40,182 @@
 - [x] `station_summary.csv` 생성 확인
 - [x] `analyze_data.py` Code Review 내용 검토
 - [x] `analyze_data.py` Code Review 유효 개선사항 반영 및 재실행
-- [x] Firestore 업로드용 `monthly_summary.csv` 생성 확인 (**168행 × 3열**)
-- [ ] 분석 단계 두 번째 Git Commit
+- [x] Firestore 업로드용 `monthly_summary.csv` 생성 및 실제 검증 완료 (**168행 × 3열**)
+- [x] VS Code Rainbow CSV 확장 설치 (편의 기능, 과제 필수 아님)
+- [x] 분석 단계 두 번째 Git Commit (`feat: add KTX demand analysis summary`, commit `e79ec21`)
+- [x] Firebase 프로젝트 생성 완료 (`ktx-congestion-analysis`, Spark 요금제)
+- [x] Gemini in Firebase 사용 안 함
+- [x] Google Analytics 사용 안 함
+- [x] Google 개발자 프로그램 가입 선택 해제
+- [x] Cloud Firestore Database 생성 완료 (`Standard`, `(default)`, `asia-northeast3 (Seoul)`, Production mode)
+- [x] 로컬 비밀키 전용 `secrets/` 폴더 생성
+- [x] `.gitignore`의 `secrets/` 제외 규칙 확인 (`git check-ignore -v --no-index` 성공)
+- [x] Firebase `서비스 계정 > Firebase Admin SDK` 화면 도달 및 `새 비공개 키 생성` 버튼 확인
+- [x] Firebase 서비스 계정 비공개 키 JSON 생성 및 `secrets/firebase-service-account.json`으로 보관
+- [x] 서비스 계정 JSON Git 제외 확인 (`git check-ignore -v` 성공)
+- [x] `GOOGLE_APPLICATION_CREDENTIALS` 환경변수 설정 및 경로 확인
+- [x] Python Firebase Admin SDK → Firestore 연결 테스트 성공 (`현재 컬렉션 수: 0`)
+- [x] `seed_firestore.py` 작성 및 Code Review 2 검토 완료
+- [x] `seed_firestore.py` 실행 성공 (`data` 컬렉션 168건 업로드)
+- [x] Firestore 업로드 검증 성공 (`target_documents=168`)
+- [x] Firebase Console에서 `data` 컬렉션 및 대표 문서 필드 확인
+- [x] `코드리뷰어.txt` 추가 제언 검토 완료 (선택 개선, 현재 추가 수정 불필요)
 - [ ] FastAPI 로컬 실행
-- [ ] Firestore 연결
+- [x] Firestore 연결 및 초기 데이터 적재 완료 (`data` 컬렉션 168문서)
 - [ ] GPT Context Injection 구현
 - [ ] Frontend 구현
 - [ ] Render / Vercel 배포
 - [ ] 보너스 기능 및 최종 README 정리
 
-> **다음 작업:** `analyze_data.py` Code Review 반영본 재실행과 `monthly_summary.csv` 생성까지 완료했습니다. 실제 파일은 **168행 × 3열**이며 `date`, `value`, `memo` 구조가 정상입니다. 이제 **processed 결과 확인 → 분석 단계 두 번째 Git Commit → Firebase 프로젝트 생성 → Firestore 연결** 순서로 진행합니다.
+> **다음 작업:** Firestore `data` 컬렉션에 `monthly_summary.csv` **168건 업로드와 재검증까지 완료**했습니다. `코드리뷰어.txt`의 두 제언은 모두 타당하지만 선택 사항입니다. 첫 번째 로깅 제언은 현재 `Seed 데이터 검증 완료 | rows=168, first=2010-01-01, last=2023-12-01` 로그로 이미 시간 범위를 확인할 수 있어 추가 수정 없이 유지합니다. 두 번째 `verify_upload` 분리 제언은 수십만 건 규모의 운영 최적화 아이디어이므로 현재 168건 과제에서는 검증을 같은 스크립트 안에 유지하는 편이 더 안전합니다. 이제 **세 번째 Git Commit → FastAPI Backend 기본 구조 생성 → `/api/data` CRUD → `/api/data/summary`** 순서로 진행합니다.
 
 ---
 
-## 지금 실행할 명령 — Firestore 연결 직전
+## 지금 할 일 — Firestore 단계 세 번째 Git Commit
 
-현재 확인된 상태:
-
-- `preprocess_data.py` 실행 완료
-- 첫 Git Commit 완료
-- `analyze_data.py` Code Review 반영본 실행 완료
-- `analysis_summary.json` 생성 완료
-- `station_summary.csv` 생성 완료
-- `monthly_summary.csv` 생성 완료
-- `monthly_summary.csv` 실제 구조: **168행 × 3열**
-- 컬럼: `date`, `value`, `memo`
-- 첫 행: `2010-01-01, 3219534, 전국 KTX 월 총승차인원`
-- 마지막 행: `2023-12-01, 6839626, 전국 KTX 월 총승차인원`
-
-### 1) VS Code의 Rainbow CSV 확장 알림
-
-CSV를 보기 쉽게 하려면 **`설치`를 선택해도 됩니다.**
-
-Rainbow CSV는 CSV 열을 색상으로 구분해 보여주는 편의 확장일 뿐이며,
-프로젝트 실행·과제 제출·Firestore 연동에는 필수가 아닙니다.
-
-> 설치 여부는 코드나 데이터 결과에 영향을 주지 않습니다.
-
-### 2) 가공 결과 파일 확인
-
-```powershell
-Get-ChildItem .\data\processed
-```
-
-다음 파일이 보이면 정상입니다.
+현재 실제 확인된 상태:
 
 ```text
-analysis_summary.json
-ktx_demand.csv
-monthly_summary.csv
-rail_hourly_pattern_2025.csv
-station_summary.csv
+seed_firestore.py 실행: 성공
+Seed 데이터 검증: rows=168
+기간: 2010-01-01 ~ 2023-12-01
+Batch 업로드: 168 / 168
+Firestore writes: 168
+Firestore 검증: target_documents=168
+Firebase Console data 컬렉션: 생성 확인
+대표 문서 2010-01-01:
+  date = "2010-01-01"
+  value = 3219534
+  memo = "전국 KTX 월 총승차인원"
 ```
 
-### 3) `monthly_summary.csv` 행 수까지 확인
+즉, Firestore 초기 데이터 적재 단계는 완료되었습니다.
 
-```powershell
-python -c "import pandas as pd; df=pd.read_csv(r'.\data\processed\monthly_summary.csv'); print(df.shape); print(df.head(2)); print(df.tail(2))"
-```
+### `코드리뷰어.txt` 추가 제언 판단
 
-정상 결과의 핵심:
+첨부 리뷰는 현재 코드를 **매우 훌륭하다고 평가한 뒤 운영 환경용 선택 팁 2개**를 제안합니다.
+
+#### 1) `verify_upload()` 성공 로그에 시간 범위 추가
+
+**판단: 좋은 제안이지만 지금 추가 수정은 필수 아님**
+
+현재 실행 로그에서 이미 다음처럼 업로드 전 검증 단계에 시간 범위가 출력됩니다.
 
 ```text
-(168, 3)
+Seed 데이터 검증 완료 | rows=168, first=2010-01-01, last=2023-12-01
 ```
 
-### 4) 분석 단계 두 번째 Commit
+따라서 이번 과제에서는 로그만 보고도 범위를 확인할 수 있습니다.
+
+`verify_upload()` 성공 로그에 동일한 범위를 한 번 더 출력하면 조금 더 친절하지만,
+기능 안정성에는 변화가 없으므로 현재 코드는 그대로 유지합니다.
+
+#### 2) 대용량일 때 `verify_upload()`를 별도 스크립트로 분리
+
+**판단: 현재는 미반영**
+
+리뷰 자체가 **수십만 건 데이터에서 업로드 속도를 더 높여야 할 때** 고려하는 운영 최적화라고 설명합니다.
+
+현재 Seed 대상은 168건이므로:
+
+```text
+업로드
+→ 즉시 검증
+→ 성공 확인
+```
+
+을 한 스크립트에서 수행하는 편이 과제 검증과 오류 발견에 더 유리합니다.
+
+따라서 지금은 분리하지 않습니다.
+
+### 1) Commit 전 상태 확인
 
 ```powershell
-git add .
 git status
-git commit -m "feat: add KTX demand analysis summary"
 ```
 
-Commit 성공 후 확인:
+서비스 계정 비밀키인:
+
+```text
+secrets/firebase-service-account.json
+```
+
+이 목록에 나타나면 안 됩니다.
+
+현재 변경 대상으로 보이는 것이 자연스러운 파일:
+
+```text
+modified: .gitignore
+modified: README.md
+new file: scripts/seed_firestore.py
+```
+
+### 2) 필요한 파일만 Stage
 
 ```powershell
-git log --oneline -2
+git add .gitignore README.md scripts/seed_firestore.py
+```
+
+### 3) Stage 결과 확인
+
+```powershell
+git status
+```
+
+`Changes to be committed` 아래에 위 3개 파일만 있는지 확인합니다.
+
+### 4) 세 번째 Git Commit
+
+```powershell
+git commit -m "feat: seed Firestore with KTX monthly data"
+```
+
+### 5) Commit 기록 확인
+
+```powershell
+git log --oneline -3
 ```
 
 예상 흐름:
 
 ```text
-<새 커밋> feat: add KTX demand analysis summary
-<이전 커밋> feat: preprocess KTX demand data
+<새 해시> feat: seed Firestore with KTX monthly data
+e79ec21 feat: add KTX demand analysis summary
+7ea252b feat: preprocess KTX demand data
 ```
 
-### 5) 그다음 단계 — Firebase / Firestore
+### 6) 작업 트리 확인
 
-두 번째 Commit이 성공하면 Firestore 연결을 시작합니다.
+```powershell
+git status
+```
 
-우선 Firestore `data` 컬렉션에는 **13,906건 전체가 아니라 `monthly_summary.csv`의 168건**을 넣는 구조로 진행합니다.
+정상적인 최종 상태:
 
 ```text
-data/
-  └─ 168개 월별 대표 시계열
-     - date
-     - value
-     - memo
+On branch main
+nothing to commit, working tree clean
 ```
 
-원본 13,906건은 CSV로 유지하고, 상세 분석 결과는 별도 컬렉션으로 분리합니다.
+### Commit 다음 개발 단계
+
+세 번째 Commit 성공 후에는 **FastAPI Backend 기본 구조**를 만듭니다.
+
+우선 다음 순서로 진행합니다.
 
 ```text
-station_summaries/
-rail_hourly_patterns/
-analysis_summary/
-conversations/
+backend/main.py
+→ backend/models/
+→ backend/services/firestore_service.py
+→ backend/services/data_service.py
+→ backend/routers/data.py
+→ FastAPI 로컬 실행
+→ Swagger /docs 확인
+→ /api/data CRUD
+→ /api/data/summary
 ```
 
-> **현재는 Firebase Console 작업을 시작하기 전에 두 번째 Git Commit까지 먼저 완료하는 것을 권장합니다.**
+> 아직 GPT API와 Frontend로 넘어가지 않습니다. 먼저 Firestore 기반 Data API를 완성하고 검증합니다.
 
 ---
 
@@ -215,6 +281,47 @@ conversations/
 > Code Review는 전반적으로 높은 완성도로 평가했고, 개선점도 오류 수정이라기보다 **유지보수성·가독성 향상을 위한 리팩터링**에 가깝습니다.
 
 
+
+## seed_firestore.py Code Review 2 검토
+
+첨부한 `코드리뷰어2.jpg`를 검토했습니다.
+
+### 확인된 장점
+
+- 입력 CSV에 대한 방어적 검증이 충분함
+- 날짜 기반 Document ID + `set()`으로 멱등성 확보
+- 168건을 Batch Write로 처리하는 구조가 현재 데이터 규모에 적합
+- 업로드 후 별도 검증 단계를 둔 점이 좋음
+- Firebase Admin SDK 중복 초기화를 피하는 방향이 적절함
+
+### 개선 제안과 결정
+
+| 제안 | 결정 | 이유 |
+|---|---|---|
+| Firestore Batch를 400건 단위로 분할 | **반영** | 향후 500건 이상으로 데이터가 늘어날 가능성에 대비 |
+| 전체 컬렉션 count 비교 대신 Seed 대상 ID 검증 | **반영** | CRUD로 다른 문서가 추가되어도 Seed 검증이 실패하지 않게 함 |
+| 업로드 후 필드값까지 검증 | **추가 반영** | 문서 존재뿐 아니라 `date/value/memo` 일치 여부까지 확인 |
+| `get_firestore_client()` 반환 타입 명시 | **반영** | IDE/가독성 개선 |
+| DB 인자 타입 힌트 추가 | **반영** | 함수 계약을 명확하게 함 |
+| `MIN_REQUIRED_ROWS` 의미 설명 | **반영** | 과제 최소 100건 요구와 코드의 연결을 명확하게 함 |
+
+> Code Review 2의 개선점은 현재 168건에서 발생한 오류를 수정하는 성격보다는,
+> **향후 데이터 증가와 CRUD 이후 상태까지 고려한 안정성·정확성·유지보수성 강화**에 가깝습니다.
+
+---
+
+## seed_firestore.py 추가 Code Review (`코드리뷰어.txt`)
+
+추가 리뷰에서는 현재 코드를 매우 훌륭하다고 평가하고, 운영 환경에서 고려할 선택 제언 2개를 제시했습니다.
+
+| 제언 | 결정 | 이유 |
+|---|---|---|
+| `verify_upload()` 성공 로그에 검증 시간 범위 추가 | **현재 유지** | `load_seed_data()` 로그에서 이미 `first=2010-01-01`, `last=2023-12-01`을 출력하므로 현재 과제에서는 충분함 |
+| 대용량 시 `verify_upload()`를 별도 스크립트로 분리 | **미반영** | 현재 168건 규모에서는 업로드 직후 검증까지 한 번에 수행하는 편이 더 단순하고 안전함 |
+
+> 두 제언 모두 좋은 운영 최적화 아이디어지만, 현재 과제 규모에서는 **코드를 더 복잡하게 만들 정도의 실익이 없으므로 현 상태를 유지**합니다.
+
+---
 
 ## KTX 데이터 선정 결정 — 1차
 
@@ -908,6 +1015,7 @@ Vercel
 | Validation | Pydantic |
 | Database | Firebase Firestore |
 | AI | OpenAI GPT API |
+| Firebase Console AI 보조 | Gemini in Firebase 사용 안 함 (과제 필수 아님) |
 | Frontend | HTML / CSS / JavaScript |
 | Backend Deploy | Render |
 | Frontend Deploy | Vercel |
@@ -1034,17 +1142,26 @@ uvicorn backend.main:app --reload
 
 # 9. Firestore 설계
 
+## Gemini in Firebase와 Firestore 역할 구분
+
+- **Firestore**: KTX 시계열 데이터와 AI 대화 기록을 저장하는 데이터베이스
+- **OpenAI GPT API**: 데이터 Summary를 바탕으로 사용자 질문에 답변하는 AI
+- **Gemini in Firebase**: Firebase Console에서 개발을 돕는 선택적 AI 보조 기능
+- 이번 프로젝트에서는 **Gemini in Firebase를 애플리케이션 AI로 연결하지 않음**
+
+
+
 ## 9-1. 컬렉션
 
 ### `data`
 
-분석용 KTX 시계열 데이터를 저장합니다.
+과제 필수 시계열 데이터로 `monthly_summary.csv`의 전국 KTX 월 총승차인원 **168건**을 저장합니다.
 
 ```json
 {
-  "date": "[YYYY-MM-DD]",
-  "value": 0,
-  "memo": "[노선/요일/시간대 등]"
+  "date": "2010-01-01",
+  "value": 3219534,
+  "memo": "전국 KTX 월 총승차인원"
 }
 ```
 
@@ -1233,6 +1350,7 @@ OPENAI_TIMEOUT=
 !.env.example
 *firebase-adminsdk*.json
 serviceAccountKey*.json
+secrets/
 __pycache__/
 *.pyc
 venv/

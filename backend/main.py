@@ -8,6 +8,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routers.data import router as data_router
+from backend.routers.conversations import router as conversations_router
+from backend.routers.chat import router as chat_router
 
 
 DEFAULT_ORIGINS = [
@@ -19,11 +21,10 @@ DEFAULT_ORIGINS = [
 
 
 def get_allowed_origins() -> list[str]:
-    """ALLOWED_ORIGINS 환경변수를 쉼표로 분리해 CORS 허용 목록을 반환합니다."""
+    """Return the configured CORS origins."""
     raw = os.getenv("ALLOWED_ORIGINS", "")
     if not raw.strip():
         return DEFAULT_ORIGINS
-
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
@@ -42,18 +43,17 @@ app.add_middleware(
 )
 
 app.include_router(data_router)
+app.include_router(conversations_router)
+app.include_router(chat_router)
 
 
 @app.get("/", tags=["System"])
 def root() -> dict[str, str]:
-    """API 기본 동작 확인용 엔드포인트."""
-    return {
-        "message": "KTX Congestion Analysis API",
-        "status": "ok",
-    }
+    """API root endpoint."""
+    return {"message": "KTX Congestion Analysis API", "status": "ok"}
 
 
 @app.get("/health", tags=["System"])
 def health() -> dict[str, str]:
-    """FastAPI 프로세스 상태 확인용 엔드포인트."""
+    """Process health endpoint."""
     return {"status": "healthy"}

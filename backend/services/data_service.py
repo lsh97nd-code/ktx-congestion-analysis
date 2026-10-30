@@ -22,16 +22,34 @@ class DataAlreadyExistsError(Exception):
     """Raised when a document with the same date ID already exists."""
 
 
+class DataMalformedError(RuntimeError):
+    """Raised when a Firestore data document has an invalid required field."""
+
+
 def _collection():
     return get_firestore_client().collection(COLLECTION_NAME)
 
 
 def _snapshot_to_record(snapshot) -> DataRecord:
+    """Convert one Firestore snapshot into a validated DataRecord."""
     payload = snapshot.to_dict() or {}
+
+    if "value" not in payload:
+        raise DataMalformedError(
+            f"Firestore 문서 '{snapshot.id}'에 필수 필드 'value'가 없습니다."
+        )
+
+    try:
+        value = int(payload["value"])
+    except (TypeError, ValueError) as exc:
+        raise DataMalformedError(
+            f"Firestore 문서 '{snapshot.id}'의 'value'를 정수로 변환할 수 없습니다."
+        ) from exc
+
     return DataRecord(
         id=snapshot.id,
         date=str(payload.get("date", snapshot.id)),
-        value=int(payload["value"]),
+        value=value,
         memo=str(payload.get("memo", "")),
     )
 
@@ -93,7 +111,7 @@ def _calculate_pct_change(previous: float, current: float) -> float | None:
 
 
 def get_data_summary() -> DataSummary:
-    """Calculate the assignment summary from the current Firestore documents."""
+    """Calculate the assignment summary from one current Firestore data read."""
     records = list_data()
 
     if not records:

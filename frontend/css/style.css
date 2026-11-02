@@ -1,0 +1,519 @@
+/* =========================================================
+   KTX 예매난 위험도 분석 및 대체 이동수단 선택 AI 비서
+   frontend/css/style.css
+   ========================================================= */
+
+/* ---------- 1. 기본 변수 ---------- */
+:root {
+  --color-bg: #f4f7fb;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f8fafc;
+  --color-border: #dbe4ee;
+  --color-border-strong: #c6d3e1;
+
+  --color-text: #172033;
+  --color-text-soft: #5d6b7c;
+  --color-text-muted: #7f8b99;
+
+  --color-primary: #2457c5;
+  --color-primary-dark: #1b449d;
+  --color-primary-soft: #eaf1ff;
+
+  --color-success: #0f8a63;
+  --color-success-soft: #e9f8f3;
+
+  --color-danger: #c53b3b;
+  --color-danger-soft: #fff0f0;
+
+  --shadow-sm: 0 4px 14px rgba(27, 48, 78, 0.07);
+  --shadow-md: 0 12px 28px rgba(27, 48, 78, 0.1);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  --content-width: 980px;
+}
+
+/* ---------- 2. 기본 리셋 ---------- */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    linear-gradient(180deg, #edf3ff 0, rgba(237, 243, 255, 0) 340px),
+    var(--color-bg);
+  color: var(--color-text);
+  font-family:
+    "Pretendard",
+    "Noto Sans KR",
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    Arial,
+    sans-serif;
+  line-height: 1.6;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* ---------- 3. 전체 레이아웃 ---------- */
+.app-container {
+  width: min(calc(100% - 32px), var(--content-width));
+  margin: 0 auto;
+  padding: 42px 0 28px;
+}
+
+/* ---------- 4. 상단 헤더 ---------- */
+.app-header {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+  padding: 38px 40px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, #173f98 0%, #2457c5 58%, #3375dd 100%);
+  color: #ffffff;
+  box-shadow: var(--shadow-md);
+}
+
+.app-header::after {
+  content: "";
+  position: absolute;
+  width: 230px;
+  height: 230px;
+  right: -70px;
+  top: -95px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.eyebrow {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 8px;
+  color: #d9e6ff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-header h1 {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+  line-height: 1.25;
+  letter-spacing: -0.04em;
+}
+
+.header-description {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 16px 0 0;
+  color: #eef4ff;
+  font-size: 1rem;
+}
+
+/* ---------- 5. 공통 섹션 카드 ---------- */
+main {
+  display: grid;
+  gap: 22px;
+}
+
+.chat-section,
+.history-section {
+  padding: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.section-heading {
+  margin-bottom: 22px;
+}
+
+.section-heading h2 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  letter-spacing: -0.025em;
+}
+
+.section-heading p {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.95rem;
+}
+
+/* ---------- 6. 질문 폼 ---------- */
+#chat-form {
+  display: grid;
+  gap: 10px;
+}
+
+#chat-form label {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+#message-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 16px 17px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  outline: none;
+  background: #ffffff;
+  color: var(--color-text);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+
+#message-input::placeholder {
+  color: #98a4b1;
+}
+
+#message-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(36, 87, 197, 0.12);
+  background: #fcfdff;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+#submit-button,
+#refresh-conversations-button {
+  border: 0;
+  border-radius: 10px;
+  font-weight: 700;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+#submit-button {
+  min-width: 124px;
+  padding: 12px 22px;
+  background: var(--color-primary);
+  color: #ffffff;
+  box-shadow: 0 5px 14px rgba(36, 87, 197, 0.22);
+}
+
+#submit-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: var(--color-primary-dark);
+}
+
+#refresh-conversations-button {
+  padding: 10px 16px;
+  border: 1px solid #b8c8e9;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+#refresh-conversations-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #dce8ff;
+}
+
+/* ---------- 7. 폼 메시지 ---------- */
+#form-message,
+#history-message {
+  min-height: 1.5em;
+  margin: 2px 0 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--color-text-soft);
+}
+
+#form-message.error,
+#history-message.error {
+  color: var(--color-danger);
+}
+
+#form-message.success,
+#history-message.success {
+  color: var(--color-success);
+}
+
+/* ---------- 8. 로딩 영역 ---------- */
+#loading-area {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid #c8d7f5;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+#loading-area p {
+  margin: 0;
+  font-weight: 700;
+}
+
+#loading-area p::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 9px;
+  vertical-align: -2px;
+  border: 2px solid rgba(36, 87, 197, 0.25);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- 9. AI 답변 카드 ---------- */
+#answer-area {
+  margin-top: 18px;
+  padding: 22px;
+  border: 1px solid #cde6dc;
+  border-left: 5px solid var(--color-success);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, #f5fcf9 0%, #ffffff 100%);
+}
+
+#answer-area h3 {
+  margin: 0 0 12px;
+  color: #0a7453;
+  font-size: 1.1rem;
+}
+
+#answer-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.answer-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 20px 0 0;
+}
+
+.answer-meta > div {
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid #dce7e2;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.answer-meta dt {
+  margin-bottom: 3px;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.answer-meta dd {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 10. 최근 대화 ---------- */
+.history-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+#conversation-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.empty-message {
+  margin: 0;
+  padding: 22px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/*
+  app.js에서 최근 대화 항목을 아래 클래스 구조로 만들면
+  별도 CSS 수정 없이 바로 카드 형태가 적용됩니다.
+
+  .conversation-card
+    .conversation-question
+    .conversation-answer
+    .conversation-meta
+*/
+.conversation-card {
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.conversation-card:hover {
+  transform: translateY(-1px);
+  border-color: #bfd0e7;
+  box-shadow: var(--shadow-sm);
+}
+
+.conversation-question,
+.conversation-answer {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.conversation-question {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.conversation-question::before {
+  content: "Q. ";
+  color: var(--color-primary);
+}
+
+.conversation-answer {
+  margin-top: 8px;
+  color: var(--color-text-soft);
+}
+
+.conversation-answer::before {
+  content: "A. ";
+  color: var(--color-success);
+  font-weight: 800;
+}
+
+.conversation-meta {
+  margin-top: 12px;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+/* ---------- 11. Footer ---------- */
+.app-footer {
+  margin-top: 22px;
+  padding: 16px 6px 0;
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+  text-align: center;
+}
+
+.app-footer p {
+  margin: 0;
+}
+
+/* ---------- 12. hidden 속성 보장 ---------- */
+[hidden] {
+  display: none !important;
+}
+
+/* ---------- 13. 키보드 접근성 ---------- */
+button:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(36, 87, 197, 0.28);
+  outline-offset: 2px;
+}
+
+/* ---------- 14. 태블릿 / 모바일 ---------- */
+@media (max-width: 720px) {
+  .app-container {
+    width: min(calc(100% - 20px), var(--content-width));
+    padding-top: 20px;
+  }
+
+  .app-header {
+    padding: 28px 22px;
+    border-radius: 16px;
+  }
+
+  .chat-section,
+  .history-section {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .answer-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions,
+  .history-actions {
+    justify-content: stretch;
+  }
+
+  #submit-button,
+  #refresh-conversations-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-header h1 {
+    font-size: 1.65rem;
+  }
+
+  .header-description,
+  .section-heading p {
+    font-size: 0.9rem;
+  }
+
+  .chat-section,
+  .history-section {
+    padding: 17px;
+  }
+
+  #message-input {
+    min-height: 110px;
+    padding: 14px;
+  }
+}

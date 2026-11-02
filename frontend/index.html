@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="KTX 수요 데이터를 기반으로 이용 추세를 분석하고 질문에 답변하는 AI 비서">
+  <title>KTX 예매난 위험도 분석 AI 비서</title>
+
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <p class="eyebrow">KTX Demand Analysis Assistant</p>
+      <h1>KTX 예매난 위험도 분석 및 대체 이동수단 선택 AI 비서</h1>
+      <p class="header-description">
+        KTX 월별 이용 수요 데이터를 바탕으로 최근 수요 추세를 확인하고
+        AI에게 관련 질문을 할 수 있습니다.
+      </p>
+    </header>
+
+    <main>
+      <section class="chat-section" aria-labelledby="chat-title">
+        <div class="section-heading">
+          <h2 id="chat-title">AI에게 질문하기</h2>
+          <p>
+            현재 분석 데이터는 월별 KTX 승차 수요를 기반으로 합니다.
+            특정 날짜의 실시간 잔여 좌석이나 실제 매진 확률을 의미하지 않습니다.
+          </p>
+        </div>
+
+        <form id="chat-form">
+          <label for="message-input">질문</label>
+
+          <textarea
+            id="message-input"
+            name="message"
+            rows="4"
+            placeholder="예: 최근 KTX 이용 수요 추세를 설명해줘."
+            required
+          ></textarea>
+
+          <div class="form-actions">
+            <button id="submit-button" type="submit">질문하기</button>
+          </div>
+
+          <p id="form-message" role="status" aria-live="polite"></p>
+        </form>
+
+        <div id="loading-area" hidden>
+          <p>AI 답변을 생성하고 있습니다...</p>
+        </div>
+
+        <article id="answer-area" hidden aria-live="polite">
+          <h3>AI 답변</h3>
+          <p id="answer-text"></p>
+
+          <dl class="answer-meta">
+            <div>
+              <dt>대화 ID</dt>
+              <dd id="conversation-id">-</dd>
+            </div>
+            <div>
+              <dt>사용 모델</dt>
+              <dd id="model-name">-</dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="history-section" aria-labelledby="history-title">
+        <div class="section-heading">
+          <h2 id="history-title">최근 대화</h2>
+          <p>Firestore에 저장된 최근 AI 대화 기록을 표시할 예정입니다.</p>
+        </div>
+
+        <div class="history-actions">
+          <button id="refresh-conversations-button" type="button">
+            대화 목록 새로고침
+          </button>
+        </div>
+
+        <p id="history-message" role="status" aria-live="polite"></p>
+
+        <div id="conversation-list">
+          <p class="empty-message">아직 화면에 불러온 대화가 없습니다.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>데이터 기반 참고용 분석 서비스 · 실시간 KTX 좌석 조회 서비스가 아닙니다.</p>
+    </footer>
+  </div>
+
+  <script src="./js/app.js" defer></script>
+</body>
+</html>

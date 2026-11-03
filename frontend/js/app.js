@@ -9,7 +9,7 @@
  * - GET  /api/conversations
  */
 
-const API_BASE_URL = 'http://127.0.0.1:8001';
+const API_BASE_URL = 'https://ktx-congestion-analysis.onrender.com';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
   year: 'numeric',

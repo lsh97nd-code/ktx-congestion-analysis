@@ -62,6 +62,7 @@ body {
 }
 
 button,
+input,
 textarea {
   font: inherit;
 }
@@ -147,6 +148,8 @@ main {
   gap: 22px;
 }
 
+.summary-section,
+.data-section,
 .chat-section,
 .history-section {
   padding: 28px;
@@ -172,7 +175,321 @@ main {
   font-size: 0.95rem;
 }
 
-/* ---------- 6. 질문 폼 ---------- */
+/* ---------- 6. 데이터 요약 ---------- */
+.summary-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.summary-heading {
+  margin-bottom: 16px;
+}
+
+#refresh-summary-button {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  border: 1px solid #b8c8e9;
+  border-radius: 10px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+  font-weight: 700;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}
+
+#refresh-summary-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #dce8ff;
+}
+
+#summary-message {
+  min-height: 1.5em;
+  margin: 0 0 14px;
+  color: var(--color-text-soft);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+#summary-message.error {
+  color: var(--color-danger);
+}
+
+#summary-message.success {
+  color: var(--color-success);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-card {
+  position: relative;
+  min-width: 0;
+  padding: 17px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, #ffffff 0%, var(--color-surface-soft) 100%);
+}
+
+.summary-card-wide {
+  grid-column: span 2;
+}
+
+.summary-label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.summary-card strong {
+  display: inline;
+  color: var(--color-text);
+  font-size: 1.22rem;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+
+.summary-unit {
+  margin-left: 4px;
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.summary-card-trend {
+  border-color: #c8d7f5;
+  background: linear-gradient(180deg, #f4f8ff 0%, #ffffff 100%);
+}
+
+.summary-card-trend strong {
+  color: var(--color-primary-dark);
+}
+
+.summary-change {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.summary-note {
+  margin: 14px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+
+/* ---------- 7. 데이터 관리(CRUD) ---------- */
+.data-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.data-heading {
+  margin-bottom: 16px;
+}
+
+.data-heading code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--color-surface-soft);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.9em;
+}
+
+#refresh-data-button,
+#add-data-button,
+.data-delete-button {
+  border-radius: 10px;
+  font-weight: 700;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+#refresh-data-button {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  border: 1px solid #b8c8e9;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+#refresh-data-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #dce8ff;
+}
+
+.data-form {
+  margin-top: 4px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
+}
+
+.data-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  gap: 12px;
+}
+
+.data-form label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.data-form label > span {
+  color: var(--color-text);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.data-form input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  outline: none;
+  background: #ffffff;
+  color: var(--color-text);
+}
+
+.data-form input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(36, 87, 197, 0.1);
+}
+
+.data-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.data-safety-note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+#add-data-button {
+  flex: 0 0 auto;
+  padding: 11px 18px;
+  border: 0;
+  background: var(--color-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(36, 87, 197, 0.18);
+}
+
+#add-data-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: var(--color-primary-dark);
+}
+
+#data-message {
+  min-height: 1.5em;
+  margin: 12px 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+#data-message.success {
+  color: var(--color-success);
+}
+
+#data-message.error {
+  color: var(--color-danger);
+}
+
+.data-table-wrap {
+  margin-top: 16px;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  font-size: 0.9rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 13px;
+  border-bottom: 1px solid #edf1f5;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.data-table th {
+  background: #f4f7fb;
+  color: var(--color-text-soft);
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table td:nth-child(1),
+.data-table td:nth-child(2),
+.data-table td:nth-child(4) {
+  white-space: nowrap;
+}
+
+.data-empty {
+  padding: 24px !important;
+  color: var(--color-text-muted);
+  text-align: center !important;
+}
+
+.data-delete-button {
+  padding: 7px 11px;
+  border: 1px solid #e2bcbc;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 0.82rem;
+}
+
+.data-delete-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #ffe4e4;
+}
+
+.data-delete-button:disabled {
+  border-color: var(--color-border);
+  background: #f5f7f9;
+  color: var(--color-text-muted);
+}
+
+.data-note {
+  margin: 12px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+/* ---------- 8. 질문 폼 ---------- */
 #chat-form {
   display: grid;
   gap: 10px;
@@ -439,6 +756,82 @@ main {
   font-size: 0.8rem;
 }
 
+
+
+/* ---------- 10-1. 특정 대화 불러오기 ---------- */
+.conversation-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.conversation-load-button {
+  padding: 9px 14px;
+  border: 1px solid #c9d7ec;
+  border-radius: 9px;
+  background: #f4f8ff;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.conversation-load-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: #a9c0e3;
+  background: #eaf2ff;
+}
+
+.conversation-load-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.loaded-conversation {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #d9e5f5;
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.loaded-conversation-title {
+  margin: 0 0 10px;
+  color: var(--color-primary);
+  font-size: 0.95rem;
+}
+
+.loaded-message + .loaded-message {
+  margin-top: 10px;
+}
+
+.loaded-message strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.82rem;
+}
+
+.loaded-message p,
+.loaded-conversation-empty {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.loaded-message-user strong {
+  color: var(--color-primary);
+}
+
+.loaded-message-assistant strong {
+  color: var(--color-success);
+}
+
+
 /* ---------- 11. Footer ---------- */
 .app-footer {
   margin-top: 22px;
@@ -476,10 +869,42 @@ textarea:focus-visible {
     border-radius: 16px;
   }
 
+  .data-section,
   .chat-section,
   .history-section {
     padding: 20px;
     border-radius: 16px;
+  }
+
+  .summary-header-row,
+  .data-header-row {
+    display: grid;
+  }
+
+  #refresh-summary-button,
+  #refresh-data-button {
+    width: 100%;
+  }
+
+  .data-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .data-form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  #add-data-button {
+    width: 100%;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary-card-wide {
+    grid-column: span 2;
   }
 
   .answer-meta {
@@ -507,6 +932,15 @@ textarea:focus-visible {
     font-size: 0.9rem;
   }
 
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card-wide {
+    grid-column: auto;
+  }
+
+  .data-section,
   .chat-section,
   .history-section {
     padding: 17px;

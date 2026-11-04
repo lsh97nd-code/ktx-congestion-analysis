@@ -20,6 +20,135 @@
     </header>
 
     <main>
+      <section class="summary-section" aria-labelledby="summary-title">
+        <div class="summary-header-row">
+          <div class="section-heading summary-heading">
+            <h2 id="summary-title">KTX 데이터 요약</h2>
+            <p>Firestore에 저장된 전국 KTX 월별 승차 수요를 기준으로 계산한 현재 요약 정보입니다.</p>
+          </div>
+
+          <button id="refresh-summary-button" type="button">
+            요약 새로고침
+          </button>
+        </div>
+
+        <p id="summary-message" role="status" aria-live="polite">
+          데이터 요약을 불러오는 중입니다.
+        </p>
+
+        <div class="summary-grid" aria-live="polite">
+          <article class="summary-card summary-card-wide">
+            <span class="summary-label">분석 기간</span>
+            <strong id="summary-period">-</strong>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">데이터 개수</span>
+            <strong id="summary-count">-</strong>
+            <span class="summary-unit">개월</span>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">월평균 승차인원</span>
+            <strong id="summary-average">-</strong>
+            <span class="summary-unit">명</span>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">최대 월 승차인원</span>
+            <strong id="summary-max">-</strong>
+            <span class="summary-unit">명</span>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">최소 월 승차인원</span>
+            <strong id="summary-min">-</strong>
+            <span class="summary-unit">명</span>
+          </article>
+
+          <article class="summary-card summary-card-trend">
+            <span class="summary-label">최근 추세</span>
+            <strong id="summary-trend">-</strong>
+            <span id="summary-change" class="summary-change">변화율 -</span>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">최근 12개월 월평균</span>
+            <strong id="summary-recent-average">-</strong>
+            <span class="summary-unit">명</span>
+          </article>
+
+          <article class="summary-card">
+            <span class="summary-label">직전 12개월 월평균</span>
+            <strong id="summary-previous-average">-</strong>
+            <span class="summary-unit">명</span>
+          </article>
+        </div>
+
+        <p class="summary-note">
+          ※ 월별 집계 데이터 기반 참고 지표이며, 특정 날짜의 실시간 좌석이나 실제 매진 확률을 의미하지 않습니다.
+        </p>
+      </section>
+
+      <section class="data-section" aria-labelledby="data-title">
+        <div class="data-header-row">
+          <div class="section-heading data-heading">
+            <h2 id="data-title">KTX 데이터 관리 (CRUD)</h2>
+            <p>Firestore의 <code>data</code> 컬렉션을 조회하고, 제출 확인용 테스트 데이터를 안전하게 추가·삭제할 수 있습니다.</p>
+          </div>
+
+          <button id="refresh-data-button" type="button">
+            데이터 목록 새로고침
+          </button>
+        </div>
+
+        <form id="data-form" class="data-form">
+          <div class="data-form-grid">
+            <label>
+              <span>날짜</span>
+              <input id="data-date" name="date" type="date" min="2024-01-01" required>
+            </label>
+
+            <label>
+              <span>승차인원 값</span>
+              <input id="data-value" name="value" type="number" min="0" step="1" placeholder="예: 7000000" required>
+            </label>
+
+            <label class="data-form-memo">
+              <span>메모</span>
+              <input id="data-memo" name="memo" type="text" maxlength="200" placeholder="예: Frontend CRUD 제출 확인용 테스트 데이터" required>
+            </label>
+          </div>
+
+          <div class="data-form-actions">
+            <p class="data-safety-note">※ 원본 168건 보호를 위해 2023-12-01 이전 데이터는 화면에서 삭제할 수 없도록 잠급니다.</p>
+            <button id="add-data-button" type="submit">테스트 데이터 추가</button>
+          </div>
+
+          <p id="data-message" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">날짜</th>
+                <th scope="col">승차인원</th>
+                <th scope="col">메모</th>
+                <th scope="col">관리</th>
+              </tr>
+            </thead>
+            <tbody id="data-list">
+              <tr>
+                <td colspan="4" class="data-empty">데이터 목록을 불러오는 중입니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="data-note">최근 날짜 기준 최대 12건을 표시합니다. 새 테스트 데이터를 추가하면 목록과 Summary가 함께 갱신됩니다.</p>
+      </section>
+
       <section class="chat-section" aria-labelledby="chat-title">
         <div class="section-heading">
           <h2 id="chat-title">AI에게 질문하기</h2>
@@ -71,7 +200,7 @@
       <section class="history-section" aria-labelledby="history-title">
         <div class="section-heading">
           <h2 id="history-title">최근 대화</h2>
-          <p>Firestore에 저장된 최근 AI 대화 기록을 표시할 예정입니다.</p>
+          <p>Firestore에 저장된 최근 AI 대화 기록입니다. 각 대화의 ‘대화 불러오기’ 버튼으로 상세 내용을 확인할 수 있습니다.</p>
         </div>
 
         <div class="history-actions">

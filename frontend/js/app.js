@@ -13,7 +13,15 @@
  * - GET  /api/conversations
  */
 
-const API_BASE_URL = 'https://ktx-congestion-analysis.onrender.com';
+const API_BASE_URL = String(window.APP_CONFIG?.API_BASE_URL || '')
+  .trim()
+  .replace(/\/+$/, '');
+
+if (!API_BASE_URL) {
+  throw new Error(
+    'API_BASE_URL이 설정되지 않았습니다. Vercel 환경변수와 빌드 설정을 확인하세요.'
+  );
+}
 const SEED_DATA_END_DATE = '2023-12-01';
 const TEST_DATA_MIN_DATE = '2024-01-01';
 const DATA_LIST_LIMIT = 12;

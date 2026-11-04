@@ -12,3 +12,4 @@ Thumbs.db
 secrets/
 *firebase-adminsdk*.json
 serviceAccountKey*.json
+frontend/dist/

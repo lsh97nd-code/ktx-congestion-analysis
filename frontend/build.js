@@ -12,6 +12,25 @@ if (!apiBaseUrl) {
   process.exit(1);
 }
 
+try {
+  const parsedUrl = new URL(apiBaseUrl);
+  if (
+    !/^https?:\/\//i.test(apiBaseUrl) ||
+    !['http:', 'https:'].includes(parsedUrl.protocol) ||
+    parsedUrl.username ||
+    parsedUrl.password ||
+    parsedUrl.search ||
+    parsedUrl.hash
+  ) {
+    throw new Error('Unsupported API URL');
+  }
+} catch {
+  console.error(
+    '[build] API_BASE_URL must be an absolute HTTP(S) URL without credentials, a query, or a fragment.'
+  );
+  process.exit(1);
+}
+
 const distDir = path.join(__dirname, 'dist');
 const distJsDir = path.join(distDir, 'js');
 

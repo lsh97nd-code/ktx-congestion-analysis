@@ -17,11 +17,6 @@ const API_BASE_URL = String(window.APP_CONFIG?.API_BASE_URL || '')
   .trim()
   .replace(/\/+$/, '');
 
-if (!API_BASE_URL) {
-  throw new Error(
-    'API_BASE_URL이 설정되지 않았습니다. Vercel 환경변수와 빌드 설정을 확인하세요.'
-  );
-}
 const SEED_DATA_END_DATE = '2023-12-01';
 const TEST_DATA_MIN_DATE = '2024-01-01';
 const DATA_LIST_LIMIT = 12;
@@ -493,14 +488,22 @@ async function loadDataItems({ silent = false } = {}) {
 async function handleDataSubmit(event) {
   event.preventDefault();
 
-  const date = elements.dataDate.value;
-  const value = Number(elements.dataValue.value);
+  const month = elements.dataDate.value;
+  const date = `${month}-01`;
+  const rawValue = elements.dataValue.value.trim();
+  const value = Number(rawValue);
   const memo = elements.dataMemo.value.trim();
 
-  if (!date || !Number.isFinite(value) || value < 0 || !memo) {
+  if (
+    !/^\d{4}-(0[1-9]|1[0-2])$/.test(month) ||
+    !rawValue ||
+    !Number.isSafeInteger(value) ||
+    value < 0 ||
+    !memo
+  ) {
     setStatus(
       elements.dataMessage,
-      '날짜, 0 이상의 승차인원 값, 메모를 모두 입력해 주세요.',
+      '기준 월, 0 이상의 정수 승차인원 값, 메모를 모두 입력해 주세요.',
       'error'
     );
     return;
@@ -521,7 +524,7 @@ async function handleDataSubmit(event) {
   try {
     await createDataItem({
       date,
-      value: Math.trunc(value),
+      value,
       memo,
     });
 
@@ -979,6 +982,32 @@ function validateRequiredElements() {
 
 function initializeApp() {
   if (!validateRequiredElements()) {
+    return;
+  }
+
+  if (!API_BASE_URL) {
+    console.error('API_BASE_URL이 설정되지 않았습니다. Frontend 빌드 설정을 확인하세요.');
+    for (const statusElement of [
+      elements.summaryMessage,
+      elements.dataMessage,
+      elements.formMessage,
+      elements.historyMessage,
+    ]) {
+      setStatus(
+        statusElement,
+        '서비스 연결 설정을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+        'error'
+      );
+    }
+    for (const button of [
+      elements.refreshSummaryButton,
+      elements.refreshDataButton,
+      elements.addDataButton,
+      elements.submitButton,
+      elements.refreshButton,
+    ]) {
+      button.disabled = true;
+    }
     return;
   }
 

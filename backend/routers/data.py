@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import date
 
 from fastapi import APIRouter, HTTPException, Response, status
 
@@ -21,6 +22,30 @@ from backend.services.data_service import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/data", tags=["Data"])
+
+SEED_DATA_END_DATE = date(2023, 12, 1)
+
+
+def _require_mutable_date(document_date: date) -> None:
+    """Protect the historical baseline even when callers bypass the frontend."""
+    if document_date <= SEED_DATA_END_DATE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="2010~2023 원본 데이터는 API에서 변경할 수 없습니다.",
+        )
+
+
+def _validate_mutable_document_id(document_id: str) -> None:
+    try:
+        document_date = date.fromisoformat(document_id)
+        if document_date.isoformat() != document_id or document_date.day != 1:
+            raise ValueError("Expected a canonical month-start document ID")
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail="데이터 ID는 매월 1일의 YYYY-MM-01 형식이어야 합니다.",
+        ) from exc
+    _require_mutable_date(document_date)
 
 
 @router.get("", response_model=list[DataRecord])
@@ -57,6 +82,7 @@ def get_summary() -> DataSummary:
 @router.post("", response_model=DataRecord, status_code=status.HTTP_201_CREATED)
 def post_data(payload: DataCreate) -> DataRecord:
     """Create one time-series document."""
+    _require_mutable_date(payload.date)
     try:
         return create_data(payload)
     except DataAlreadyExistsError as exc:
@@ -75,6 +101,7 @@ def post_data(payload: DataCreate) -> DataRecord:
 @router.put("/{document_id}", response_model=DataRecord)
 def put_data(document_id: str, payload: DataUpdate) -> DataRecord:
     """Update one existing document."""
+    _validate_mutable_document_id(document_id)
     try:
         return update_data(document_id, payload)
     except DataNotFoundError as exc:
@@ -93,6 +120,7 @@ def put_data(document_id: str, payload: DataUpdate) -> DataRecord:
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_data(document_id: str) -> Response:
     """Delete one existing document."""
+    _validate_mutable_document_id(document_id)
     try:
         delete_data(document_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)

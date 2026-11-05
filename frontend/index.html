@@ -105,13 +105,13 @@
         <form id="data-form" class="data-form">
           <div class="data-form-grid">
             <label>
-              <span>날짜</span>
-              <input id="data-date" name="date" type="date" min="2024-01-01" required>
+              <span>기준 월</span>
+              <input id="data-date" name="date" type="month" min="2024-01" max="9999-12" pattern="[0-9]{4}-(0[1-9]|1[0-2])" placeholder="예: 2024-01" required>
             </label>
 
             <label>
               <span>승차인원 값</span>
-              <input id="data-value" name="value" type="number" min="0" step="1" placeholder="예: 7000000" required>
+              <input id="data-value" name="value" type="number" min="0" max="9007199254740991" step="1" placeholder="예: 7000000" required>
             </label>
 
             <label class="data-form-memo">
@@ -121,7 +121,7 @@
           </div>
 
           <div class="data-form-actions">
-            <p class="data-safety-note">※ 원본 168건 보호를 위해 2023-12-01 이전 데이터는 화면에서 삭제할 수 없도록 잠급니다.</p>
+            <p class="data-safety-note">※ 월별 데이터는 해당 월 1일로 저장합니다. 원본 168건 보호를 위해 2023년 12월까지의 데이터는 삭제할 수 없습니다.</p>
             <button id="add-data-button" type="submit">테스트 데이터 추가</button>
           </div>
 

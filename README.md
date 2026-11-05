@@ -11,6 +11,8 @@ KTX 월별 이용 수요 데이터를 분석하고, 분석 결과를 기반으�
 - Swagger: <https://ktx-congestion-analysis.onrender.com/docs>
 - Health Check: <https://ktx-congestion-analysis.onrender.com/health>
 
+> **2026-11-05 코드 검토 및 배포 오류 수정:** Render의 무빌드 배포에서 빠졌던 `frontend/js/config.js`를 추가했습니다. 원인·수정·검증 및 공개 시연의 제한사항은 [코드 검토 기록](docs/CODE_REVIEW_2026-11-05.md)을 참고하세요. 아래의 기존 배포 완료 기록은 이전 검증 시점의 기록이며, 로컬 수정 사항은 GitHub 반영 및 재배포 후 운영 사이트에 적용됩니다.
+
 ---
 
 ## 1. 최종 서비스 화면
@@ -165,6 +167,8 @@ Swagger에서 POST 요청을 이용한 데이터 추가도 검증했습니다.
 | GET | `/api/conversations/{conversation_id}` | 특정 대화 조회 |
 | DELETE | `/api/conversations/{conversation_id}` | 대화 삭제 |
 
+최근 대화 목록은 기본 20건을 반환합니다. `?limit=1`부터 `?limit=100`까지 지정할 수 있습니다. 저장소 오류는 상세 인증정보를 노출하지 않는 503 응답으로 처리합니다.
+
 ![Conversation API 엔드포인트](image/06_ConversationAPI_Swagger_엔드포인트.jpg)
 
 ### Chat API
@@ -241,6 +245,10 @@ Frontend는 Framework 없이 **HTML / CSS / JavaScript**로 구현했습니다.
 - Build: `echo "No build required"`
 - Publish Directory: `.`
 
+위 무빌드 설정에서는 저장소에 포함된 `frontend/js/config.js`가 Render Backend URL을 제공합니다. 이 파일이 누락되면 설정 파일 요청이 404가 되어 앱이 실행되지 않습니다.
+
+환경별 API 주소를 사용하려면 Root Directory는 `frontend`, Build Command는 `node build.js`, Publish Directory는 `dist`로 설정하고 `API_BASE_URL` 환경변수에 Backend의 절대 HTTP(S) URL을 넣습니다. Vercel은 `frontend/vercel.json`의 동일한 빌드 방식을 사용합니다. 환경변수는 **빌드 시점**에 적용되므로 변경 후 다시 빌드해야 합니다.
+
 ![Render Frontend Static Site 배포](image/11_Render_Frontend_StaticSite_배포성공.jpg)
 
 ---
@@ -301,6 +309,10 @@ Frontend 최근 대화 갱신
 ---
 
 ## 13. 보안
+
+현재 서비스는 **공개 시연용이며 사용자 인증을 사용하지 않습니다.** 모든 방문자가 저장된 대화를 조회·추가·삭제하고 2024년 이후 테스트 데이터를 변경할 수 있습니다. 대화에 개인정보·비밀정보를 입력하지 마세요. CORS는 사용자 인증이나 직접 API 호출 차단 기능이 아닙니다. Chat API에도 사용자별 호출 제한이 없어 공개 호출로 OpenAI 비용과 Firestore 사용량이 발생할 수 있습니다.
+
+2010~2023 원본 데이터는 API에서 추가·수정·삭제를 403으로 거부합니다. 이는 원본 보호 규칙이며 사용자별 권한 분리를 제공하지 않습니다. 운영 서비스로 전환하려면 사용자 인증, 대화 소유권, 관리자 권한 및 호출량 제한을 별도로 적용해야 합니다.
 
 비밀정보는 Git 저장소에 포함하지 않습니다.
 
@@ -375,20 +387,39 @@ cd ktx-congestion-analysis
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r backend/requirements.txt
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 python -m uvicorn backend.main:app --reload --port 8001
 ```
 
-환경변수는 실제 값을 README에 적지 않고 `.env` 또는 배포 환경변수에서 관리합니다.
+처음 실행할 때만 `.env.example`을 복사하고 실행 전 `.env`에 OpenAI/Firebase 설정을 입력합니다. 이미 `.env`가 있으면 덮어쓰지 않습니다. 환경변수는 실제 값을 README에 적지 않고 `.env` 또는 배포 환경변수에서 관리합니다. 프로젝트 루트의 `.env`만 읽으며 배포 환경변수가 우선합니다.
 
 ### Frontend
 
-현재 `frontend/js/app.js`는 Render Backend URL을 사용하도록 연결되어 있습니다. 로컬에서 정적 페이지를 확인하려면 예를 들어 다음과 같이 실행할 수 있습니다.
+저장소의 `frontend/js/config.js`는 localhost/127.0.0.1에서는 로컬 Backend `http://127.0.0.1:8001`에 연결하고, 외부 호스트에서는 Render Backend에 연결합니다. Backend 실행 후 다음 명령으로 정적 페이지를 확인합니다.
 
 ```powershell
 python -m http.server 5500 -d frontend
 ```
 
 브라우저에서 `http://127.0.0.1:5500`으로 접속합니다.
+
+API 주소를 지정해 빌드하려면 다음 명령을 사용합니다. Node.js가 필요하며 별도 npm 패키지 설치는 필요하지 않습니다.
+
+```powershell
+$env:API_BASE_URL = 'http://127.0.0.1:8001'
+node frontend/build.js
+python -m http.server 5500 -d frontend/dist
+```
+
+데이터 입력은 월 단위이며 API에는 `YYYY-MM-01`과 0 이상의 정수 승차인원을 전송합니다. 최근 24개월에 누락된 월이 있으면 연간 변화율을 제공하지 않고, 비교 기준값이 0이면 `계산 불가`로 표시합니다.
+
+외부 API 호출 없이 회귀 테스트를 실행할 수 있습니다.
+
+```powershell
+pip install -r requirements-dev.txt
+python -m pytest -q
+node --test frontend/tests/*.test.js
+```
 
 ---
 

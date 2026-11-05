@@ -11,8 +11,15 @@ class DataCreate(BaseModel):
     """Request body used when creating one time-series document."""
 
     date: date
-    value: int = Field(ge=0, description="전국 KTX 월 총승차인원")
+    value: int = Field(ge=0, strict=True, description="전국 KTX 월 총승차인원")
     memo: str = Field(min_length=1, max_length=200)
+
+    @field_validator("date")
+    @classmethod
+    def validate_month_start(cls, value: date) -> date:
+        if value.day != 1:
+            raise ValueError("월별 데이터의 date는 해당 월의 1일이어야 합니다.")
+        return value
 
     @field_validator("memo")
     @classmethod
@@ -26,7 +33,7 @@ class DataCreate(BaseModel):
 class DataUpdate(BaseModel):
     """Request body used when updating an existing document."""
 
-    value: int | None = Field(default=None, ge=0)
+    value: int | None = Field(default=None, ge=0, strict=True)
     memo: str | None = Field(default=None, min_length=1, max_length=200)
 
     @field_validator("memo")
@@ -52,8 +59,16 @@ class DataRecord(BaseModel):
 
     id: str
     date: str
-    value: int
+    value: int = Field(ge=0, strict=True)
     memo: str
+
+    @field_validator("date")
+    @classmethod
+    def validate_month_start(cls, value: str) -> str:
+        parsed = date.fromisoformat(value)
+        if parsed.day != 1 or value != parsed.isoformat():
+            raise ValueError("월별 데이터의 date는 YYYY-MM-01 형식이어야 합니다.")
+        return value
 
 
 class DataSummary(BaseModel):

@@ -3,8 +3,9 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 
-from dotenv import load_dotenv
 from openai import OpenAI
+
+from backend.config import load_environment
 
 DEFAULT_MODEL = "gpt-5.6-luna"
 OPENAI_TIMEOUT_SECONDS = 30.0
@@ -13,7 +14,7 @@ OPENAI_MAX_RETRIES = 2
 
 def _load_environment() -> None:
     """Load values from .env when the service is actually used."""
-    load_dotenv()
+    load_environment()
 
 
 @lru_cache(maxsize=1)
@@ -56,6 +57,9 @@ def generate_ai_response(user_message: str, system_prompt: str) -> str:
         input=user_message,
         store=False,
     )
+
+    if response.status != "completed":
+        raise RuntimeError("OpenAI 답변 생성이 완료되지 않았습니다.")
 
     answer = getattr(response, "output_text", None)
     if not isinstance(answer, str) or not answer.strip():

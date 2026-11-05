@@ -77,14 +77,16 @@ def require_columns(
         )
 
 
-def calculate_pct_change(current: float, previous: float) -> float:
+def calculate_pct_change(current: float, previous: float) -> float | None:
     """0으로 나누는 오류 없이 증감률을 계산한다."""
     if previous == 0:
-        return 0.0
+        return None
     return (current - previous) / previous * 100
 
 
-def classify_trend(change_pct: float) -> str:
+def classify_trend(change_pct: float | None) -> str:
+    if change_pct is None:
+        return "계산 불가"
     if change_pct >= TREND_THRESHOLD_PCT:
         return "증가"
     if change_pct <= -TREND_THRESHOLD_PCT:
@@ -107,10 +109,26 @@ def load_ktx_data() -> pd.DataFrame:
         "memo",
     }
     require_columns(df, required, PATHS.ktx_file.name)
+    if df.empty:
+        raise ValueError("KTX 가공 데이터가 비어 있습니다.")
 
     df["date"] = pd.to_datetime(df["date"], errors="raise")
+    if df["date"].isna().any() or not df["date"].dt.is_month_start.all():
+        raise ValueError("KTX 가공 데이터의 date는 각 월의 1일이어야 합니다.")
+    if df["station"].isna().any() or df["station"].astype(str).str.strip().eq("").any():
+        raise ValueError("KTX 가공 데이터에 정차역이 없는 행이 있습니다.")
+    df["station"] = df["station"].astype(str).str.strip()
+    if not df["direction"].isin(["up", "down"]).all():
+        raise ValueError("KTX 가공 데이터의 direction은 up 또는 down이어야 합니다.")
+    if df.duplicated(["date", "station", "direction"]).any():
+        raise ValueError("KTX 가공 데이터에 같은 월·역·방향의 중복 행이 있습니다.")
     for column in ("boardings", "alightings", "value"):
         df[column] = pd.to_numeric(df[column], errors="raise")
+        values = df[column]
+        if values.isna().any() or not values.ge(0).all() or not values.mod(1).eq(0).all():
+            raise ValueError(f"KTX 가공 데이터의 {column}은 0 이상의 정수여야 합니다.")
+    if not df["value"].eq(df["boardings"]).all():
+        raise ValueError("KTX 가공 데이터의 value는 boardings와 같아야 합니다.")
 
     return df
 
@@ -134,6 +152,8 @@ def compute_recent_trend(monthly: pd.DataFrame) -> dict:
             "월별 데이터가 필요합니다."
         )
 
+    monthly = monthly.sort_values("date").reset_index(drop=True)
+    _require_consecutive_months(monthly.tail(MIN_TREND_MONTHS))
     latest_window = monthly.tail(TREND_WINDOW_MONTHS)
     previous_window = monthly.iloc[
         -(TREND_WINDOW_MONTHS * 2):-TREND_WINDOW_MONTHS
@@ -151,9 +171,19 @@ def compute_recent_trend(monthly: pd.DataFrame) -> dict:
         "threshold_pct": TREND_THRESHOLD_PCT,
         "latest_12_month_avg": round(latest_avg, 2),
         "previous_12_month_avg": round(previous_avg, 2),
-        "change_pct": round(float(change_pct), 2),
+        "change_pct": round(change_pct, 2) if change_pct is not None else None,
         "trend": classify_trend(change_pct),
     }
+
+
+def _require_consecutive_months(monthly: pd.DataFrame) -> None:
+    """누락 월이나 중복 월을 연속된 월로 오인하지 않도록 확인한다."""
+    dates = pd.to_datetime(monthly["date"], errors="raise")
+    if dates.isna().any() or not dates.dt.is_month_start.all():
+        raise ValueError("월별 데이터의 날짜는 각 월의 1일이어야 합니다.")
+    months = dates.dt.year * 12 + dates.dt.month
+    if not months.diff().iloc[1:].eq(1).all():
+        raise ValueError("비교 구간에 중복되거나 누락된 월이 있습니다.")
 
 
 def compute_monthly_total_summary(monthly: pd.DataFrame) -> dict:
@@ -161,6 +191,8 @@ def compute_monthly_total_summary(monthly: pd.DataFrame) -> dict:
     if len(monthly) < 2:
         raise ValueError("전월 대비 계산을 위해 최소 2개월 데이터가 필요합니다.")
 
+    monthly = monthly.sort_values("date").reset_index(drop=True)
+    _require_consecutive_months(monthly.tail(2))
     latest = monthly.iloc[-1]
     previous = monthly.iloc[-2]
 
@@ -174,7 +206,7 @@ def compute_monthly_total_summary(monthly: pd.DataFrame) -> dict:
         "latest_month_boardings": int(latest["monthly_boardings"]),
         "previous_month": previous["date"].strftime("%Y-%m-%d"),
         "previous_month_boardings": int(previous["monthly_boardings"]),
-        "mom_change_pct": round(float(mom_change_pct), 2),
+        "mom_change_pct": round(mom_change_pct, 2) if mom_change_pct is not None else None,
     }
 
 

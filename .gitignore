@@ -13,3 +13,4 @@ secrets/
 *firebase-adminsdk*.json
 serviceAccountKey*.json
 frontend/dist/
+.pytest_cache/

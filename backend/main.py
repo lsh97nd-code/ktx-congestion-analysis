@@ -7,10 +7,12 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.config import load_environment
 from backend.routers.data import router as data_router
 from backend.routers.conversations import router as conversations_router
 from backend.routers.chat import router as chat_router
 
+load_environment()
 
 DEFAULT_ORIGINS = [
     "http://localhost:3000",

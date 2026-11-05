@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from statistics import mean
 
+from google.api_core.exceptions import AlreadyExists
+from pydantic import ValidationError
+
 from backend.models.data import DataCreate, DataRecord, DataSummary, DataUpdate
 from backend.services.firestore_service import get_firestore_client
 
@@ -40,18 +43,16 @@ def _snapshot_to_record(snapshot) -> DataRecord:
         )
 
     try:
-        value = int(payload["value"])
-    except (TypeError, ValueError) as exc:
+        return DataRecord(
+            id=snapshot.id,
+            date=payload.get("date", snapshot.id),
+            value=payload["value"],
+            memo=payload.get("memo", ""),
+        )
+    except (TypeError, ValueError, ValidationError) as exc:
         raise DataMalformedError(
-            f"Firestore 문서 '{snapshot.id}'의 'value'를 정수로 변환할 수 없습니다."
+            f"Firestore 문서 '{snapshot.id}'의 월별 데이터 형식이 올바르지 않습니다."
         ) from exc
-
-    return DataRecord(
-        id=snapshot.id,
-        date=str(payload.get("date", snapshot.id)),
-        value=value,
-        memo=str(payload.get("memo", "")),
-    )
 
 
 def list_data() -> list[DataRecord]:
@@ -64,17 +65,15 @@ def create_data(payload: DataCreate) -> DataRecord:
     """Create a new document using the ISO date as its Firestore document ID."""
     document_id = payload.date.isoformat()
     document_ref = _collection().document(document_id)
-    snapshot = document_ref.get()
-
-    if snapshot.exists:
-        raise DataAlreadyExistsError(document_id)
-
     document = {
         "date": document_id,
         "value": payload.value,
         "memo": payload.memo,
     }
-    document_ref.set(document)
+    try:
+        document_ref.create(document)
+    except AlreadyExists as exc:
+        raise DataAlreadyExistsError(document_id) from exc
     return DataRecord(id=document_id, **document)
 
 
@@ -112,10 +111,13 @@ def _calculate_pct_change(previous: float, current: float) -> float | None:
 
 def get_data_summary() -> DataSummary:
     """Calculate the assignment summary from one current Firestore data read."""
-    records = list_data()
+    records = sorted(list_data(), key=lambda record: record.date)
 
     if not records:
         raise DataNotFoundError("data collection is empty")
+
+    if len({record.date for record in records}) != len(records):
+        raise DataMalformedError("같은 월의 데이터가 중복되어 있습니다.")
 
     values = [record.value for record in records]
 
@@ -124,16 +126,27 @@ def get_data_summary() -> DataSummary:
     change_pct: float | None = None
     trend = "데이터 부족"
 
-    if len(records) >= MIN_TREND_MONTHS:
+    recent_months = [
+        int(record.date[:4]) * 12 + int(record.date[5:7])
+        for record in records[-MIN_TREND_MONTHS:]
+    ]
+    complete_window = len(recent_months) == MIN_TREND_MONTHS and all(
+        current - previous == 1
+        for previous, current in zip(recent_months, recent_months[1:])
+    )
+
+    if complete_window:
         recent_values = values[-TREND_WINDOW_MONTHS:]
         previous_values = values[-MIN_TREND_MONTHS:-TREND_WINDOW_MONTHS]
 
-        recent_avg = round(mean(recent_values), 2)
-        previous_avg = round(mean(previous_values), 2)
-        change_pct = _calculate_pct_change(previous_avg, recent_avg)
+        recent_mean = mean(recent_values)
+        previous_mean = mean(previous_values)
+        recent_avg = round(recent_mean, 2)
+        previous_avg = round(previous_mean, 2)
+        change_pct = _calculate_pct_change(previous_mean, recent_mean)
 
         if change_pct is None:
-            trend = "유지"
+            trend = "계산 불가"
         elif change_pct >= TREND_THRESHOLD_PCT:
             trend = "증가"
         elif change_pct <= -TREND_THRESHOLD_PCT:

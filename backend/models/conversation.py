@@ -1,7 +1,5 @@
 """Pydantic models for conversation CRUD."""
 
-from datetime import datetime
-
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 USER_MESSAGE_MAX_LENGTH = 4_000

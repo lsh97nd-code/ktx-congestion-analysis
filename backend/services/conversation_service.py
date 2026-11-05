@@ -8,6 +8,8 @@ from google.cloud.firestore_v1.base_document import DocumentSnapshot
 from backend.services.firestore_service import get_firestore_client
 
 COLLECTION_NAME = "conversations"
+DEFAULT_CONVERSATION_LIMIT = 20
+MAX_CONVERSATION_LIMIT = 100
 
 
 def _snapshot_to_record(snapshot: DocumentSnapshot) -> dict[str, Any]:
@@ -57,14 +59,20 @@ def create_conversation(payload: dict[str, Any]) -> dict[str, Any]:
     return _snapshot_to_record(snapshot)
 
 
-def list_conversations() -> list[dict[str, Any]]:
-    """Return all conversations ordered newest first."""
+def list_conversations(
+    limit: int = DEFAULT_CONVERSATION_LIMIT,
+) -> list[dict[str, Any]]:
+    """Return a bounded page of the newest conversations."""
+
+    if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= MAX_CONVERSATION_LIMIT:
+        raise ValueError(f"limit must be an integer between 1 and {MAX_CONVERSATION_LIMIT}.")
 
     db = get_firestore_client()
 
     snapshots = (
         db.collection(COLLECTION_NAME)
         .order_by("created_at", direction=firestore.Query.DESCENDING)
+        .limit(limit)
         .stream()
     )
 

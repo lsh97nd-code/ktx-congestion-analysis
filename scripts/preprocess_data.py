@@ -104,6 +104,8 @@ def require_columns(
 def parse_month_column(series: pd.Series, column_name: str) -> pd.Series:
     """YYYY-MM 월 문자열을 날짜형으로 변환한다."""
     try:
+        if series.isna().any() or not series.astype(str).str.fullmatch(r"\d{4}-\d{2}").all():
+            raise ValueError("월 값이 없거나 YYYY-MM 형식이 아닙니다.")
         return pd.to_datetime(series, format="%Y-%m", errors="raise")
     except (ValueError, TypeError) as exc:
         raise ValueError(
@@ -116,15 +118,22 @@ def convert_numeric_columns(
     df: pd.DataFrame,
     columns: list[str],
     file_name: str,
+    *,
+    integer: bool = False,
 ) -> None:
     """지정 컬럼을 숫자로 변환하고 문제 컬럼을 명확히 알려준다."""
     for column in columns:
         try:
             df[column] = pd.to_numeric(df[column], errors="raise")
+            values = df[column]
+            if values.isna().any() or not values.ge(0).all() or values.isin([float("inf"), float("-inf")]).any():
+                raise ValueError("인원수는 유한한 0 이상의 숫자여야 합니다.")
+            if integer and not values.mod(1).eq(0).all():
+                raise ValueError("인원수는 정수여야 합니다.")
         except (ValueError, TypeError) as exc:
             raise ValueError(
                 f"{file_name}의 '{column}' 컬럼에 "
-                "숫자로 변환할 수 없는 값이 있습니다."
+                "유효하지 않은 인원수가 있습니다."
             ) from exc
 
 
@@ -182,6 +191,11 @@ def preprocess_ktx() -> pd.DataFrame:
         "상행_하차인원수",
     }
     require_columns(df, required, PATHS.ktx_file.name)
+    if df.empty:
+        raise ValueError("KTX 원본 데이터가 비어 있습니다.")
+    if df["정차역"].isna().any() or df["정차역"].astype(str).str.strip().eq("").any():
+        raise ValueError("KTX 원본 데이터에 정차역이 없는 행이 있습니다.")
+    df["정차역"] = df["정차역"].astype(str).str.strip()
 
     logger.info(
         "KTX 원본 | 행=%s, 열=%s, 결측=%s, 완전중복=%s",
@@ -192,6 +206,8 @@ def preprocess_ktx() -> pd.DataFrame:
     )
 
     df["date"] = parse_month_column(df["운행년월"], "운행년월")
+    if df.duplicated(["date", "정차역"]).any():
+        raise ValueError("KTX 원본 데이터에 같은 월·정차역의 중복 행이 있습니다.")
 
     number_cols = [
         "하행_승차인원수",
@@ -199,7 +215,7 @@ def preprocess_ktx() -> pd.DataFrame:
         "상행_승차인원수",
         "상행_하차인원수",
     ]
-    convert_numeric_columns(df, number_cols, PATHS.ktx_file.name)
+    convert_numeric_columns(df, number_cols, PATHS.ktx_file.name, integer=True)
 
     result = build_direction_rows(df)
     result = result.sort_values(

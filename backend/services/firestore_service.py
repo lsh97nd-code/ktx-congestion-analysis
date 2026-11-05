@@ -7,18 +7,18 @@ import threading
 from pathlib import Path
 
 import firebase_admin
-from dotenv import load_dotenv
 from firebase_admin import credentials, firestore
 from google.cloud.firestore import Client
 
+from backend.config import PROJECT_ROOT, load_environment
+
 logger = logging.getLogger(__name__)
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 LOCAL_SERVICE_ACCOUNT = PROJECT_ROOT / "secrets" / "firebase-service-account.json"
 
 # 로컬 개발에서는 프로젝트 루트의 .env를 명시적으로 로드합니다.
 # Render 등 배포 환경에서는 플랫폼 환경변수를 그대로 사용합니다.
-load_dotenv(PROJECT_ROOT / ".env")
+load_environment()
 
 _lock = threading.Lock()
 _client: Client | None = None

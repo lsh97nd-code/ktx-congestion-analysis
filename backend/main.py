@@ -25,9 +25,14 @@ DEFAULT_ORIGINS = [
 def get_allowed_origins() -> list[str]:
     """Return the configured CORS origins."""
     raw = os.getenv("ALLOWED_ORIGINS", "")
-    if not raw.strip():
-        return DEFAULT_ORIGINS
-    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+    base = raw.split(",") if raw.strip() else DEFAULT_ORIGINS
+    extra = os.getenv("ADDITIONAL_ALLOWED_ORIGINS", "").split(",")
+    # Add verified production origins without replacing the existing allowlist.
+    return list(dict.fromkeys(
+        origin.strip().rstrip("/")
+        for origin in [*base, *extra]
+        if origin.strip()
+    ))
 
 
 app = FastAPI(

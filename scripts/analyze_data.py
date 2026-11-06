@@ -2,16 +2,19 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import pandas as pd
 
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from backend.config import get_trend_window_months
 
 logger = logging.getLogger(__name__)
 
-TREND_WINDOW_MONTHS = 12
-MIN_TREND_MONTHS = TREND_WINDOW_MONTHS * 2
 TREND_THRESHOLD_PCT = 3.0
 
 
@@ -145,18 +148,20 @@ def build_monthly_total(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def compute_recent_trend(monthly: pd.DataFrame) -> dict:
-    """최근 12개월과 직전 12개월의 월평균 총승차인원을 비교한다."""
-    if len(monthly) < MIN_TREND_MONTHS:
+    """설정된 N개월씩의 인접 구간에서 월평균 총승차인원을 비교한다."""
+    window_months = get_trend_window_months()
+    required_months = window_months * 2
+    if len(monthly) < required_months:
         raise ValueError(
-            f"최근 추세 비교를 위해 최소 {MIN_TREND_MONTHS}개월의 "
+            f"최근 추세 비교를 위해 최소 {required_months}개월의 "
             "월별 데이터가 필요합니다."
         )
 
     monthly = monthly.sort_values("date").reset_index(drop=True)
-    _require_consecutive_months(monthly.tail(MIN_TREND_MONTHS))
-    latest_window = monthly.tail(TREND_WINDOW_MONTHS)
+    _require_consecutive_months(monthly.tail(required_months))
+    latest_window = monthly.tail(window_months)
     previous_window = monthly.iloc[
-        -(TREND_WINDOW_MONTHS * 2):-TREND_WINDOW_MONTHS
+        -required_months:-window_months
     ]
 
     latest_avg = float(latest_window["monthly_boardings"].mean())
@@ -165,12 +170,15 @@ def compute_recent_trend(monthly: pd.DataFrame) -> dict:
 
     return {
         "method": (
-            f"최근 {TREND_WINDOW_MONTHS}개월 월평균 총승차인원 vs "
-            f"직전 {TREND_WINDOW_MONTHS}개월 월평균 총승차인원"
+            f"최근 {window_months}개월 월평균 총승차인원 vs "
+            f"직전 {window_months}개월 월평균 총승차인원"
         ),
         "threshold_pct": TREND_THRESHOLD_PCT,
-        "latest_12_month_avg": round(latest_avg, 2),
-        "previous_12_month_avg": round(previous_avg, 2),
+        "trend_window_months": window_months,
+        "recent_window_avg": round(latest_avg, 2),
+        "previous_window_avg": round(previous_avg, 2),
+        "latest_12_month_avg": round(latest_avg, 2) if window_months == 12 else None,
+        "previous_12_month_avg": round(previous_avg, 2) if window_months == 12 else None,
         "change_pct": round(change_pct, 2) if change_pct is not None else None,
         "trend": classify_trend(change_pct),
     }
@@ -379,10 +387,12 @@ def main() -> None:
         summary["recent_trend"]["trend"],
     )
     logger.info(
-        "최근 추세 근거 | 최근12개월 평균=%.2f, "
-        "직전12개월 평균=%.2f, 변화율=%s%%",
-        summary["recent_trend"]["latest_12_month_avg"],
-        summary["recent_trend"]["previous_12_month_avg"],
+        "최근 추세 근거 | 최근%s개월 평균=%.2f, "
+        "직전%s개월 평균=%.2f, 변화율=%s%%",
+        summary["recent_trend"]["trend_window_months"],
+        summary["recent_trend"]["recent_window_avg"],
+        summary["recent_trend"]["trend_window_months"],
+        summary["recent_trend"]["previous_window_avg"],
         summary["recent_trend"]["change_pct"],
     )
     logger.info(

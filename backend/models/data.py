@@ -80,6 +80,10 @@ class DataSummary(BaseModel):
     average: float
     max: int
     min: int
+    trend_window_months: int = Field(default=12, ge=1)
+    recent_window_avg: float | None = None
+    previous_window_avg: float | None = None
+    # Compatibility fields: only populated when the selected window is 12 months.
     recent_12_month_avg: float | None = None
     previous_12_month_avg: float | None = None
     change_pct: float | None = None

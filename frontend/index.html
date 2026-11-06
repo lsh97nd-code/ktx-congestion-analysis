@@ -17,6 +17,9 @@
         KTX 월별 이용 수요 데이터를 바탕으로 최근 수요 추세를 확인하고
         AI에게 관련 질문을 할 수 있습니다.
       </p>
+      <p class="cold-start-notice" role="note">
+        무료 서버는 첫 접속 시 응답까지 약 30~60초가 걸릴 수 있으며, 더 지연될 수 있습니다.
+      </p>
     </header>
 
     <main>
@@ -73,13 +76,13 @@
           </article>
 
           <article class="summary-card">
-            <span class="summary-label">최근 12개월 월평균</span>
+            <span id="summary-recent-label" class="summary-label">최근 12개월 월평균</span>
             <strong id="summary-recent-average">-</strong>
             <span class="summary-unit">명</span>
           </article>
 
           <article class="summary-card">
-            <span class="summary-label">직전 12개월 월평균</span>
+            <span id="summary-previous-label" class="summary-label">직전 12개월 월평균</span>
             <strong id="summary-previous-average">-</strong>
             <span class="summary-unit">명</span>
           </article>

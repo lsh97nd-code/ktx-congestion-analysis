@@ -7,13 +7,12 @@ from statistics import mean
 from google.api_core.exceptions import AlreadyExists
 from pydantic import ValidationError
 
+from backend.config import get_trend_window_months
 from backend.models.data import DataCreate, DataRecord, DataSummary, DataUpdate
 from backend.services.firestore_service import get_firestore_client
 
 
 COLLECTION_NAME = "data"
-TREND_WINDOW_MONTHS = 12
-MIN_TREND_MONTHS = TREND_WINDOW_MONTHS * 2
 TREND_THRESHOLD_PCT = 3.0
 
 
@@ -111,6 +110,8 @@ def _calculate_pct_change(previous: float, current: float) -> float | None:
 
 def get_data_summary() -> DataSummary:
     """Calculate the assignment summary from one current Firestore data read."""
+    window_months = get_trend_window_months()
+    required_months = window_months * 2
     records = sorted(list_data(), key=lambda record: record.date)
 
     if not records:
@@ -128,16 +129,16 @@ def get_data_summary() -> DataSummary:
 
     recent_months = [
         int(record.date[:4]) * 12 + int(record.date[5:7])
-        for record in records[-MIN_TREND_MONTHS:]
+        for record in records[-required_months:]
     ]
-    complete_window = len(recent_months) == MIN_TREND_MONTHS and all(
+    complete_window = len(recent_months) == required_months and all(
         current - previous == 1
         for previous, current in zip(recent_months, recent_months[1:])
     )
 
     if complete_window:
-        recent_values = values[-TREND_WINDOW_MONTHS:]
-        previous_values = values[-MIN_TREND_MONTHS:-TREND_WINDOW_MONTHS]
+        recent_values = values[-window_months:]
+        previous_values = values[-required_months:-window_months]
 
         recent_mean = mean(recent_values)
         previous_mean = mean(previous_values)
@@ -161,8 +162,11 @@ def get_data_summary() -> DataSummary:
         average=round(mean(values), 2),
         max=max(values),
         min=min(values),
-        recent_12_month_avg=recent_avg,
-        previous_12_month_avg=previous_avg,
+        trend_window_months=window_months,
+        recent_window_avg=recent_avg,
+        previous_window_avg=previous_avg,
+        recent_12_month_avg=recent_avg if window_months == 12 else None,
+        previous_12_month_avg=previous_avg if window_months == 12 else None,
         change_pct=change_pct,
         trend=trend,
     )

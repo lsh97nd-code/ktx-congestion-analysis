@@ -8,6 +8,11 @@ import pytest
 from scripts import analyze_data, preprocess_data
 
 
+@pytest.fixture(autouse=True)
+def default_comparison_window(monkeypatch):
+    monkeypatch.setenv("TREND_WINDOW_MONTHS", "12")
+
+
 def monthly_frame(values):
     return pd.DataFrame(
         {"date": pd.date_range("2022-01-01", periods=len(values), freq="MS"),
@@ -61,6 +66,11 @@ def test_checked_in_data_retains_its_published_analysis():
     expected = json.loads((root / "data/processed/analysis_summary.json").read_text(encoding="utf-8"))
     actual, station_summary, firestore_monthly = analyze_data.analyze_ktx()
     expected.pop("rail_hourly_pattern", None)
+    expected["recent_trend"].update(
+        trend_window_months=12,
+        recent_window_avg=expected["recent_trend"]["latest_12_month_avg"],
+        previous_window_avg=expected["recent_trend"]["previous_12_month_avg"],
+    )
     assert actual == expected
     assert len(firestore_monthly) == 168
     assert not station_summary.empty

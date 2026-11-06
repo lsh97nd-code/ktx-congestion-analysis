@@ -8,6 +8,11 @@ from backend.models.data import DataCreate, DataRecord, DataUpdate
 from backend.services import data_service
 
 
+@pytest.fixture(autouse=True)
+def default_comparison_window(monkeypatch):
+    monkeypatch.setenv("TREND_WINDOW_MONTHS", "12")
+
+
 def monthly_records(values, start_year=2022):
     return [
         DataRecord(

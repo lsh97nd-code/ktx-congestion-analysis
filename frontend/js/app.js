@@ -31,6 +31,8 @@ const elements = {
   summaryMin: document.getElementById('summary-min'),
   summaryTrend: document.getElementById('summary-trend'),
   summaryChange: document.getElementById('summary-change'),
+  summaryRecentLabel: document.getElementById('summary-recent-label'),
+  summaryPreviousLabel: document.getElementById('summary-previous-label'),
   summaryRecentAverage: document.getElementById('summary-recent-average'),
   summaryPreviousAverage: document.getElementById('summary-previous-average'),
 
@@ -186,6 +188,10 @@ function renderSummary(summary) {
   const periodStart = formatSummaryDate(summary.period_start);
   const periodEnd = formatSummaryDate(summary.period_end);
   const changePct = summary.change_pct;
+  const trendWindowMonths =
+    Number.isInteger(summary.trend_window_months) && summary.trend_window_months > 0
+      ? summary.trend_window_months
+      : 12;
 
   elements.summaryPeriod.textContent = `${periodStart} ~ ${periodEnd}`;
   elements.summaryCount.textContent = formatNumber(summary.count);
@@ -196,12 +202,18 @@ function renderSummary(summary) {
     typeof summary.trend === 'string' && summary.trend.trim()
       ? summary.trend
       : '-';
+  elements.summaryRecentLabel.textContent = `최근 ${trendWindowMonths}개월 월평균`;
+  elements.summaryPreviousLabel.textContent = `직전 ${trendWindowMonths}개월 월평균`;
   elements.summaryRecentAverage.textContent = formatNumber(
-    summary.recent_12_month_avg,
+    summary.recent_window_avg !== undefined
+      ? summary.recent_window_avg
+      : summary.recent_12_month_avg,
     2
   );
   elements.summaryPreviousAverage.textContent = formatNumber(
-    summary.previous_12_month_avg,
+    summary.previous_window_avg !== undefined
+      ? summary.previous_window_avg
+      : summary.previous_12_month_avg,
     2
   );
 
@@ -218,7 +230,7 @@ function renderSummary(summary) {
   }
 
   const sign = numericChange > 0 ? '+' : '';
-  elements.summaryChange.textContent = `직전 12개월 대비 ${sign}${formatNumber(
+  elements.summaryChange.textContent = `직전 ${trendWindowMonths}개월 대비 ${sign}${formatNumber(
     numericChange,
     2
   )}%`;

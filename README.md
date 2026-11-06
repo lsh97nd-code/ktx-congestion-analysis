@@ -6,12 +6,13 @@
 KTX 월별 이용 수요 데이터를 분석하고, 분석 결과를 기반으로 사용자의 질문에 답하는 데이터 기반 AI 비서입니다. 현재 공개 데이터가 월 단위라는 한계를 명확히 반영하여 **실시간 좌석·정확한 매진 확률을 단정하지 않고 수요 집중도와 예매난 위험도를 설명**합니다.
 
 - GitHub: <https://github.com/lsh97nd-code/ktx-congestion-analysis>
-- Frontend: <https://ktx-congestion-analysis-frontend.onrender.com>
+- Frontend (Vercel · 제출용): <https://ktx-congestion-analysis-frontend.vercel.app>
+- Frontend (Render · 보조): <https://ktx-congestion-analysis-frontend.onrender.com>
 - Backend API: <https://ktx-congestion-analysis.onrender.com>
 - Swagger: <https://ktx-congestion-analysis.onrender.com/docs>
 - Health Check: <https://ktx-congestion-analysis.onrender.com/health>
 
-> **2026-11-05 코드 검토 및 배포 오류 수정:** Render의 무빌드 배포에서 빠졌던 `frontend/js/config.js`를 추가했습니다. 원인·수정·검증 및 공개 시연의 제한사항은 [코드 검토 기록](docs/CODE_REVIEW_2026-11-05.md)을 참고하세요. 아래의 기존 배포 완료 기록은 이전 검증 시점의 기록이며, 로컬 수정 사항은 GitHub 반영 및 재배포 후 운영 사이트에 적용됩니다.
+> **평가 보완:** 제출용 프런트엔드는 Vercel, 백엔드는 Render입니다. 첫 화면에 무료 서버의 초기 응답 지연을 안내하며, `TREND_WINDOW_MONTHS` 설정 방법과 월별 데이터로 최근 30일을 분석할 수 없는 이유를 아래에 설명했습니다. 기존 Render 화면 이미지는 이전 통합 테스트 증빙입니다. 원본 보호·입력 검증 등은 [코드 검토 기록](docs/CODE_REVIEW_2026-11-05.md)을 참고하세요.
 
 ---
 
@@ -220,7 +221,7 @@ Frontend는 Framework 없이 **HTML / CSS / JavaScript**로 구현했습니다.
 
 ![Frontend AI 응답 및 최근 대화 갱신](image/09_Frontend_Chat_AI응답_최근대화갱신.jpg)
 
-> 현재 데이터 CRUD 기능은 **Backend API/Swagger에서 구현·검증**했으며, 최종 Frontend는 AI 채팅과 대화 조회 기능에 집중했습니다.
+Frontend는 데이터 요약·테스트 데이터 추가/삭제·AI 채팅·최근 대화 조회 및 불러오기를 제공합니다. 2010~2023 원본 데이터는 화면과 API에서 보호합니다.
 
 ---
 
@@ -238,7 +239,21 @@ Frontend는 Framework 없이 **HTML / CSS / JavaScript**로 구현했습니다.
 
 ![Render Backend Swagger 외부 접속](image/10_Render_Backend_Swagger_외부접속.jpg)
 
-### Frontend — Render Static Site
+### Frontend — Vercel (제출용)
+
+- Production URL: <https://ktx-congestion-analysis-frontend.vercel.app>
+- Project: `ktx-congestion-analysis-frontend`
+- GitHub 저장소: `lsh97nd-code/ktx-congestion-analysis`, Production Branch: `main`
+- Root Directory: `frontend`
+- Framework Preset: `Other`
+- Build Command: `node build.js`
+- Output Directory: `dist`
+- Production 환경변수: `API_BASE_URL=https://ktx-congestion-analysis.onrender.com`
+
+빌드·출력 설정은 `frontend/vercel.json`에 정의합니다. `build.js`는 빌드 시 `API_BASE_URL`을 읽어 `dist/js/config.js`를 생성하므로 환경변수를 변경한 후에는 다시 배포해야 합니다. `frontend/dist/`는 Git에 올리지 않습니다.
+
+### Frontend — Render Static Site (보조)
+
 
 - Service: `ktx-congestion-analysis-frontend`
 - Root Directory: `frontend`
@@ -253,7 +268,24 @@ Frontend는 Framework 없이 **HTML / CSS / JavaScript**로 구현했습니다.
 
 ---
 
+### 무료 서버 첫 접속 안내
+
+첫 화면에 “무료 서버는 첫 접속 시 응답까지 약 30~60초가 걸릴 수 있으며, 더 지연될 수 있습니다”를 표시합니다. 프런트엔드 화면이 열려도 Render 백엔드를 깨우는 동안 데이터 응답은 늦을 수 있습니다. 이는 확정적인 최대 시간이 아닙니다. [Render 공식 안내](https://render.com/docs/free#spinning-down-on-idle)도 유휴 무료 서비스의 재시작에 약 1분이 필요하다고 설명합니다.
+
+응답을 기다린 뒤 요약·데이터·대화 새로고침을 사용할 수 있습니다. 계속 실패하면 `/health`와 오류 메시지를 확인합니다. 콜드스타트와 CORS 오류는 원인과 조치가 다르므로 단순 대기로 CORS 문제가 해결되지는 않습니다.
+
 ## 11. CORS 문제 해결
+
+Vercel의 실제 Production Origin은 `https://ktx-congestion-analysis-frontend.vercel.app`입니다. 기존 Render Backend의 `ALLOWED_ORIGINS`는 유지하고 다음 환경변수를 추가합니다.
+
+```dotenv
+ADDITIONAL_ALLOWED_ORIGINS=https://ktx-congestion-analysis-frontend.vercel.app
+```
+
+서버는 두 목록을 합쳐 중복과 끝 `/`를 정리합니다. 여러 주소는 쉼표로 구분합니다. 환경변수 변경 후 Backend 재배포가 필요하며, 주소별 Preview 도메인은 자동 허용하지 않습니다.
+
+다음은 기존 Render Frontend 연결을 해결한 기록입니다.
+
 
 Frontend를 처음 외부 배포한 뒤 Backend 자체는 정상 동작했지만, 최근 대화 조회에서 `Failed to fetch`가 발생했습니다.
 
@@ -295,7 +327,7 @@ AI는 현재 데이터만으로 KTX·고속버스·자가용을 직접 비교해
 최종 확인된 통합 흐름:
 
 ```text
-Render Frontend
+Vercel Frontend (Render 보조 사이트도 동일 API 사용)
     ↓ POST /api/chat
 Render Backend (FastAPI)
     ↓ Summary / Prompt 구성
@@ -338,7 +370,7 @@ Frontend 최근 대화 갱신
 | AI | OpenAI API (`gpt-5.6-luna`) |
 | Frontend | HTML / CSS / JavaScript |
 | Backend Deploy | Render Web Service |
-| Frontend Deploy | Render Static Site |
+| Frontend Deploy | Vercel (제출용) / Render Static Site (보조) |
 | Version Control | Git / GitHub |
 
 ---
@@ -411,7 +443,7 @@ node frontend/build.js
 python -m http.server 5500 -d frontend/dist
 ```
 
-데이터 입력은 월 단위이며 API에는 `YYYY-MM-01`과 0 이상의 정수 승차인원을 전송합니다. 최근 24개월에 누락된 월이 있으면 연간 변화율을 제공하지 않고, 비교 기준값이 0이면 `계산 불가`로 표시합니다.
+데이터 입력은 월 단위이며 API에는 `YYYY-MM-01`과 0 이상의 정수 승차인원을 전송합니다. 비교에 필요한 연속 월이 부족하면 변화율을 제공하지 않고, 비교 기준값이 0이면 `계산 불가`로 표시합니다.
 
 외부 API 호출 없이 회귀 테스트를 실행할 수 있습니다.
 
@@ -423,7 +455,60 @@ node --test frontend/tests/*.test.js
 
 ---
 
-## 17. 현재 데이터로 할 수 있는 것과 할 수 없는 것
+## 17. 분석 기간 변경과 데이터 한계
+
+### TREND_WINDOW_MONTHS 변경 방법
+
+`TREND_WINDOW_MONTHS`는 비교 구간 한쪽에 포함할 **달력 월 수**입니다. 기본값 `12`는 최근 12개월 평균과 그 직전 12개월 평균을 비교하며, 연속 24개월이 필요합니다. 기준은 오늘이 아니라 **데이터에 저장된 마지막 월**입니다. 원본만 사용하면 기준 월은 2023-12입니다.
+
+예를 들어 최근 3개월과 직전 3개월을 비교하려면 프로젝트 루트 `.env`에서 다음을 설정합니다.
+
+```dotenv
+TREND_WINDOW_MONTHS=3
+```
+
+로컬에서는 Backend를 재시작합니다. Render에서는 Backend → Environment에 같은 값을 설정하고 재배포합니다. 코드의 상수를 여러 곳에서 따로 바꿀 필요는 없습니다. 배포 환경변수가 `.env`보다 우선하며, 0·음수·소수·문자는 허용하지 않습니다.
+
+| 설정 | 비교 | 필요한 연속 데이터 |
+|---|---|---|
+| `12` (기본) | 최근 12개월 vs 직전 12개월 | 24개월 |
+| `3` | 최근 3개월 vs 직전 3개월 | 6개월 |
+| `1` | 마지막 달 vs 직전 달 | 2개월 |
+
+API `/api/data/summary`의 `trend_window_months`, `recent_window_avg`, `previous_window_avg`와 프런트엔드 라벨·AI 프롬프트가 같은 설정을 사용합니다. 기존 `recent_12_month_avg` / `previous_12_month_avg`는 호환성을 위해 유지하며 설정이 12가 아니면 `null`입니다. 구간에 누락된 월이 있으면 `데이터 부족`, 이전 평균이 0이면 `계산 불가`로 표시합니다.
+
+오프라인 분석도 같은 설정을 사용합니다. 아래 명령은 로컬 분석 결과 파일을 다시 만들며 Firestore에는 업로드하지 않습니다.
+
+```powershell
+$env:TREND_WINDOW_MONTHS = '3'
+python scripts/analyze_data.py
+# 기본 12개월로 복원
+$env:TREND_WINDOW_MONTHS = '12'
+```
+
+README의 19.25% 등 기존 분석 수치는 기본 12개월 기준입니다. 설정을 바꾸면 결과가 달라집니다.
+
+### 왜 ‘최근 30일’ 분석에는 일별 데이터가 필요한가
+
+현재 한 행은 월 전체 승차인원의 합계이므로 하루별 값이나 월 중간부터 시작하는 30일 구간을 복원할 수 없습니다. `TREND_WINDOW_MONTHS=1`은 마지막 **달력 월**이며 최근 30일과 다릅니다. `30`으로 설정하면 30개월이 됩니다.
+
+최근 30일 분석에는 날짜별 승차인원과 충분히 최신인 일별 원천 데이터가 필요합니다. 최근 30일과 직전 30일을 비교하려면 연속 60일을 확보하고 날짜 범위·누락일 처리 기준을 정해야 합니다. 현재 월별 API는 매월 1일만 허용하므로, 일별 저장 모델·전처리·집계 로직·화면·AI 프롬프트를 함께 확장해야 합니다. 월 총합을 30으로 나눈 값은 실제 일별 관측값이 아닙니다.
+
+### 실행·배포 환경변수 요약
+
+| 위치 | 변수 | 용도 |
+|---|---|---|
+| Backend / Render | `OPENAI_API_KEY`, `OPENAI_MODEL` | AI 인증 및 모델 |
+| Backend / Render | `FIREBASE_SERVICE_ACCOUNT_JSON` | 배포용 Firestore 인증 |
+| Backend / 로컬 | `GOOGLE_APPLICATION_CREDENTIALS` | 로컬 서비스 계정 경로 |
+| Backend | `ALLOWED_ORIGINS`, `ADDITIONAL_ALLOWED_ORIGINS` | 기존·추가 프런트엔드 Origin 허용 |
+| Backend / 분석 스크립트 | `TREND_WINDOW_MONTHS` | 비교할 달력 월 수, 기본 12 |
+| Frontend / Vercel | `API_BASE_URL` | 빌드 시 사용할 Backend URL |
+
+비밀 값은 GitHub·README·프런트엔드 환경변수에 넣지 않습니다.
+
+### 현재 데이터로 할 수 있는 것과 할 수 없는 것
+
 
 ### 가능한 것
 
@@ -465,7 +550,10 @@ node --test frontend/tests/*.test.js
 | Frontend AI 채팅 | ✅ 완료 |
 | 최근 대화 조회·갱신 | ✅ 완료 |
 | Render Backend 배포 | ✅ 완료 |
-| Render Frontend 배포 | ✅ 완료 |
+| Vercel Frontend 배포 | 제출용 Production URL 제공 |
+| Render Frontend 배포 | 보조 사이트 유지 |
+| 무료 서버 초기 지연 안내 | 첫 화면 표시 |
+| 분석 기간 변경 | 환경변수 및 README 설명 |
 | CORS 외부 통신 | ✅ 해결 |
 | 외부 최종 통합 테스트 | ✅ 완료 |
 | `.env` / Firebase Key Git 제외 | ✅ 확인 |

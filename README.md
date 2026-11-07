@@ -1,7 +1,7 @@
 # KTX 예매난 위험도 분석 및 대체 이동수단 선택 AI 비서
 
 > 과제: **AI Agent 개발: 나만의 AI 비서 구축**  
-> 최종 업데이트: **2026-11-05**
+> 최종 업데이트: **2026-11-07**
 
 KTX 월별 이용 수요 데이터를 분석하고, 분석 결과를 기반으로 사용자의 질문에 답하는 데이터 기반 AI 비서입니다. 현재 공개 데이터가 월 단위라는 한계를 명확히 반영하여 **실시간 좌석·정확한 매진 확률을 단정하지 않고 수요 집중도와 예매난 위험도를 설명**합니다.
 
@@ -16,15 +16,29 @@ KTX 월별 이용 수요 데이터를 분석하고, 분석 결과를 기반으�
 
 ---
 
-## 1. 최종 서비스 화면
+## 1. Vercel Production 제출 증빙
 
-외부에 배포된 Frontend에서 AI 질문을 전송하고, OpenAI 응답을 받은 뒤 Firestore에 대화가 저장되는 흐름까지 최종 검증했습니다.
+2026년 11월 6~7일에 [제출용 Vercel 사이트](https://ktx-congestion-analysis-frontend.vercel.app/)에서 Render API와 Firestore를 연결해 검증했습니다. 아래 이미지는 실제 운영 브라우저에서 촬영한 화면입니다.
 
-![최종 외부 통합 테스트 AI 응답](image/14_Render_Frontend_최종통합테스트_AI응답.jpg)
+### 데이터 요약과 AI 채팅
 
-최종 질문이 Firestore에 저장된 뒤 최근 대화가 **4건 → 5건**으로 갱신되는 것까지 확인했습니다.
+2010년 1월부터 2023년 12월까지 **168개월**의 데이터가 표시됐습니다. 최근 12개월과 직전 12개월의 월평균 승차인원을 비교해 달라고 질문하자, AI는 각각 약 634만 명과 532만 명, 변화율 **+19.25%**를 제시했습니다. 또한 이 월별 통계로 특정 열차의 실시간 잔여 좌석을 확인할 수 없다고 답했습니다. 같은 화면의 요약 영역과 질문·답변 영역을 발췌해 위아래로 배치했습니다.
 
-![Firestore 저장 및 최근 대화 갱신](image/15_Render_Frontend_Firestore저장_최근대화갱신.jpg)
+![Vercel 운영 화면에서 확인한 168개월 수요 요약, 질문과 실제 AI 답변](image/30_vercel_summary_chat.jpg)
+
+### 테스트 데이터 추가와 삭제
+
+위쪽은 `2024-01-01`에 테스트 승차인원 `6,500,000`명을 추가한 직후, 아래쪽은 같은 행을 삭제한 직후입니다. 요약의 데이터 개수가 **168 → 169 → 168건**으로 바뀌었고, 삭제 후 마지막 행은 원본 `2023-12-01`로 돌아왔습니다.
+
+![Vercel에서 테스트 행을 추가한 성공 메시지와 같은 행을 삭제한 결과](image/31_vercel_crud.jpg)
+
+### 저장된 대화 불러오기
+
+질문 전송 후 최근 대화가 **7 → 8건**으로 늘었습니다. 새 항목의 ‘대화 불러오기’를 눌러 저장 ID `QqukBHm5QeH4qrYs8i4h`의 상세 내용을 조회했고, 불러온 질문과 답변이 위 채팅 원문과 일치했습니다.
+
+![Vercel에서 저장한 대화 ID를 다시 조회해 표시한 사용자 질문과 AI 답변](image/32_vercel_conversation.jpg)
+
+Render의 `ADDITIONAL_ALLOWED_ORIGINS`에는 위 Vercel 주소를 설정했습니다. 운영 `/api/chat`의 CORS 사전 요청에서 HTTP 200과 `Access-Control-Allow-Origin: https://ktx-congestion-analysis-frontend.vercel.app`를 확인했습니다. 요약·추가·삭제·채팅·대화 상세 조회가 모두 완료됐습니다.
 
 ---
 
@@ -305,7 +319,7 @@ https://ktx-congestion-analysis-frontend.onrender.com
 
 ---
 
-## 12. 최종 통합 테스트
+## 12. 기존 Render 통합 테스트 기록
 
 최종 테스트에서는 이전 테스트와 다른 질문을 사용했습니다.
 
@@ -562,6 +576,4 @@ README의 19.25% 등 기존 분석 수치는 기본 12개월 기준입니다. �
 
 ## 19. 보고서용 이미지 목록
 
-보고서에 사용할 원본 파일명과 변경 후 파일명, 각 이미지의 의미는 [`IMAGE_INDEX.md`](IMAGE_INDEX.md)에 정리했습니다.
-
-GitHub README의 이미지들은 모두 프로젝트 루트의 `image/` 폴더를 상대경로로 참조하므로, `README.md`와 `image/` 폴더를 함께 Commit하면 GitHub에서도 그대로 표시됩니다.
+제출용 Vercel 화면 30~32번과 기존 로컬·Render 화면의 촬영 환경 및 확인 내용을 [전체 이미지 색인](IMAGE_INDEX.md)에 정리했습니다. 로컬 검증 기록으로는 [데이터 요약](image/17_Frontend_DataSummary_요약정보표시성공.jpg), [테스트 데이터 추가](image/21_Frontend_CRUD_테스트데이터추가성공.jpg), [특정 대화 불러오기](image/25_Frontend_Conversation_특정대화불러오기성공.jpg)가 있습니다.

@@ -6,12 +6,24 @@
   <meta name="description" content="KTX 수요 데이터를 기반으로 이용 추세를 분석하고 질문에 답변하는 AI 비서">
   <title>KTX 예매난 위험도 분석 AI 비서</title>
 
+  <script src="./js/theme.js"></script>
   <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
   <div class="app-container">
     <header class="app-header">
-      <p class="eyebrow">KTX Demand Analysis Assistant</p>
+      <div class="header-toolbar">
+        <p class="eyebrow">KTX Demand Analysis Assistant</p>
+        <button
+          id="theme-toggle"
+          class="theme-toggle"
+          type="button"
+          aria-label="화면 색상 테마 전환"
+          aria-pressed="false"
+        >
+          <span aria-hidden="true">다크 모드</span>
+        </button>
+      </div>
       <h1>KTX 예매난 위험도 분석 및 대체 이동수단 선택 AI 비서</h1>
       <p class="header-description">
         KTX 월별 이용 수요 데이터를 바탕으로 최근 수요 추세를 확인하고
@@ -88,6 +100,49 @@
           </article>
         </div>
 
+        <figure class="demand-chart-panel">
+          <div class="chart-heading">
+            <div>
+              <h3 id="demand-chart-title">월별 KTX 승차 수요 추세</h3>
+              <p id="demand-chart-summary" aria-live="polite">
+                전체 월별 데이터를 불러오는 중입니다.
+              </p>
+            </div>
+          </div>
+
+          <div id="demand-chart-wrap" class="chart-scroll" hidden>
+            <svg
+              id="demand-chart"
+              class="demand-chart"
+              viewBox="0 0 900 320"
+              role="img"
+              aria-labelledby="demand-chart-title demand-chart-summary"
+            ></svg>
+          </div>
+          <p id="demand-chart-empty" class="chart-empty" role="status">
+            그래프 데이터를 불러오는 중입니다.
+          </p>
+
+          <details id="demand-chart-details" class="chart-details" hidden>
+            <summary>월별 수치 표로 확인</summary>
+            <div class="chart-table-wrap">
+              <table class="chart-table">
+                <thead>
+                  <tr>
+                    <th scope="col">기준 월</th>
+                    <th scope="col">승차인원</th>
+                  </tr>
+                </thead>
+                <tbody id="demand-chart-table-body"></tbody>
+              </table>
+            </div>
+          </details>
+
+          <figcaption>
+            Firestore의 전체 월별 승차인원을 날짜 순서로 표시합니다. 선이 끊긴 구간은 저장된 월이 연속되지 않은 구간입니다.
+          </figcaption>
+        </figure>
+
         <p class="summary-note">
           ※ 월별 집계 데이터 기반 참고 지표이며, 특정 날짜의 실시간 좌석이나 실제 매진 확률을 의미하지 않습니다.
         </p>
@@ -100,9 +155,17 @@
             <p>Firestore의 <code>data</code> 컬렉션을 조회하고, 제출 확인용 테스트 데이터를 안전하게 추가·삭제할 수 있습니다.</p>
           </div>
 
-          <button id="refresh-data-button" type="button">
-            데이터 목록 새로고침
-          </button>
+          <div class="data-header-actions">
+            <button id="download-csv-button" class="data-secondary-button" type="button" disabled>
+              CSV 다운로드
+            </button>
+            <button id="download-json-button" class="data-secondary-button" type="button" disabled>
+              JSON 다운로드
+            </button>
+            <button id="refresh-data-button" type="button">
+              데이터 목록 새로고침
+            </button>
+          </div>
         </div>
 
         <form id="data-form" class="data-form">

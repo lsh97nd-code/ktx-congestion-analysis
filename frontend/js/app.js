@@ -20,6 +20,12 @@ const API_BASE_URL = String(window.APP_CONFIG?.API_BASE_URL || '')
 const SEED_DATA_END_DATE = '2023-12-01';
 const TEST_DATA_MIN_DATE = '2024-01-01';
 const DATA_LIST_LIMIT = 12;
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+const CHART_WIDTH = 900;
+const CHART_HEIGHT = 320;
+const CHART_MARGIN = Object.freeze({ top: 22, right: 24, bottom: 54, left: 76 });
+const EXPORT_FIELDS = Object.freeze(['id', 'date', 'value', 'memo']);
+let currentDataItems = [];
 
 const elements = {
   refreshSummaryButton: document.getElementById('refresh-summary-button'),
@@ -35,6 +41,12 @@ const elements = {
   summaryPreviousLabel: document.getElementById('summary-previous-label'),
   summaryRecentAverage: document.getElementById('summary-recent-average'),
   summaryPreviousAverage: document.getElementById('summary-previous-average'),
+  demandChartWrap: document.getElementById('demand-chart-wrap'),
+  demandChart: document.getElementById('demand-chart'),
+  demandChartSummary: document.getElementById('demand-chart-summary'),
+  demandChartEmpty: document.getElementById('demand-chart-empty'),
+  demandChartDetails: document.getElementById('demand-chart-details'),
+  demandChartTableBody: document.getElementById('demand-chart-table-body'),
 
   dataForm: document.getElementById('data-form'),
   dataDate: document.getElementById('data-date'),
@@ -42,6 +54,8 @@ const elements = {
   dataMemo: document.getElementById('data-memo'),
   addDataButton: document.getElementById('add-data-button'),
   refreshDataButton: document.getElementById('refresh-data-button'),
+  downloadCsvButton: document.getElementById('download-csv-button'),
+  downloadJsonButton: document.getElementById('download-json-button'),
   dataMessage: document.getElementById('data-message'),
   dataList: document.getElementById('data-list'),
 
@@ -67,6 +81,14 @@ function setStatus(element, message = '', type = '') {
 
   if (type) {
     element.classList.add(type);
+  }
+}
+
+function setElementHidden(element, hidden) {
+  if (hidden) {
+    element.setAttribute?.('hidden', '');
+  } else {
+    element.removeAttribute?.('hidden');
   }
 }
 
@@ -326,6 +348,315 @@ function getDataDate(item) {
   return normalizeDateValue(value) || '-';
 }
 
+function getMonthIndex(dateValue) {
+  const match = String(dateValue).match(/^(\d{4})-(\d{2})-01$/);
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (!Number.isInteger(year) || month < 1 || month > 12) {
+    return null;
+  }
+
+  return year * 12 + month - 1;
+}
+
+function buildDemandChartModel(items) {
+  const byMonth = new Map();
+
+  for (const item of Array.isArray(items) ? items : []) {
+    const date = getDataDate(item);
+    const monthIndex = getMonthIndex(date);
+    const value = Number(item?.value);
+    if (monthIndex === null || !Number.isFinite(value) || value < 0) {
+      continue;
+    }
+
+    byMonth.set(monthIndex, { date, monthIndex, value });
+  }
+
+  const records = [...byMonth.values()].sort(
+    (left, right) => left.monthIndex - right.monthIndex
+  );
+  if (!records.length) {
+    return { records: [], points: [], segments: [], xLabels: [], yTicks: [] };
+  }
+
+  const plotWidth = CHART_WIDTH - CHART_MARGIN.left - CHART_MARGIN.right;
+  const plotHeight = CHART_HEIGHT - CHART_MARGIN.top - CHART_MARGIN.bottom;
+  const firstMonth = records[0].monthIndex;
+  const lastMonth = records[records.length - 1].monthIndex;
+  const monthSpan = Math.max(lastMonth - firstMonth, 1);
+  const maximumValue = Math.max(...records.map((record) => record.value));
+  const yScaleMaximum = maximumValue > 0 ? maximumValue : 1;
+
+  const points = records.map((record) => ({
+    ...record,
+    x:
+      records.length === 1
+        ? CHART_MARGIN.left + plotWidth / 2
+        : CHART_MARGIN.left +
+          ((record.monthIndex - firstMonth) / monthSpan) * plotWidth,
+    y:
+      CHART_MARGIN.top +
+      plotHeight -
+      (record.value / yScaleMaximum) * plotHeight,
+  }));
+
+  const segments = [];
+  for (const point of points) {
+    const previous = segments.at(-1)?.at(-1);
+    if (!previous || point.monthIndex - previous.monthIndex !== 1) {
+      segments.push([point]);
+    } else {
+      segments.at(-1).push(point);
+    }
+  }
+
+  const labelTarget = Math.min(7, points.length);
+  const labelIndexes = new Set();
+  for (let index = 0; index < labelTarget; index += 1) {
+    labelIndexes.add(
+      labelTarget === 1
+        ? 0
+        : Math.round((index * (points.length - 1)) / (labelTarget - 1))
+    );
+  }
+  const xLabels = [...labelIndexes].map((index) => points[index]);
+
+  const yTicks =
+    maximumValue === 0
+      ? [
+          {
+            value: 0,
+            y: CHART_MARGIN.top + plotHeight,
+          },
+        ]
+      : Array.from({ length: 5 }, (_, index) => {
+          const ratio = index / 4;
+          return {
+            value: maximumValue * ratio,
+            y: CHART_MARGIN.top + plotHeight - ratio * plotHeight,
+          };
+        });
+
+  return {
+    records,
+    points,
+    segments,
+    xLabels,
+    yTicks,
+    minimumValue: Math.min(...records.map((record) => record.value)),
+    maximumValue,
+  };
+}
+
+function createSvgElement(name, attributes = {}, text = '') {
+  const element = document.createElementNS(SVG_NAMESPACE, name);
+  for (const [key, value] of Object.entries(attributes)) {
+    element.setAttribute(key, String(value));
+  }
+  if (text) {
+    element.textContent = text;
+  }
+  return element;
+}
+
+function renderDemandChart(items) {
+  const model = buildDemandChartModel(items);
+  elements.demandChart.replaceChildren();
+  elements.demandChartTableBody.replaceChildren();
+
+  if (!model.records.length) {
+    setElementHidden(elements.demandChartWrap, true);
+    setElementHidden(elements.demandChartDetails, true);
+    setElementHidden(elements.demandChartEmpty, false);
+    elements.demandChartEmpty.textContent = '표시할 월별 승차 수요 데이터가 없습니다.';
+    elements.demandChartSummary.textContent = '그래프에 표시할 데이터가 없습니다.';
+    return model;
+  }
+
+  for (const tick of model.yTicks) {
+    elements.demandChart.append(
+      createSvgElement('line', {
+        class: 'chart-grid-line',
+        x1: CHART_MARGIN.left,
+        x2: CHART_WIDTH - CHART_MARGIN.right,
+        y1: tick.y,
+        y2: tick.y,
+      }),
+      createSvgElement(
+        'text',
+        {
+          class: 'chart-axis-label chart-axis-label-y',
+          x: CHART_MARGIN.left - 12,
+          y: tick.y + 4,
+          'text-anchor': 'end',
+        },
+        formatNumber(tick.value)
+      )
+    );
+  }
+
+  for (const point of model.xLabels) {
+    elements.demandChart.appendChild(
+      createSvgElement(
+        'text',
+        {
+          class: 'chart-axis-label chart-axis-label-x',
+          x: point.x,
+          y: CHART_HEIGHT - 20,
+          'text-anchor': 'middle',
+        },
+        point.date.slice(0, 7)
+      )
+    );
+  }
+
+  for (const segment of model.segments) {
+    if (segment.length > 1) {
+      const path = segment
+        .map(
+          (point, index) =>
+            `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`
+        )
+        .join(' ');
+      elements.demandChart.appendChild(
+        createSvgElement('path', {
+          class: 'chart-line',
+          d: path,
+          fill: 'none',
+        })
+      );
+    }
+  }
+
+  for (const point of model.points) {
+    const circle = createSvgElement('circle', {
+      class: 'chart-point',
+      cx: point.x,
+      cy: point.y,
+      r: model.points.length === 1 ? 5 : 2.8,
+    });
+    circle.appendChild(
+      createSvgElement(
+        'title',
+        {},
+        `${point.date.slice(0, 7)}: ${formatNumber(point.value)}명`
+      )
+    );
+    elements.demandChart.appendChild(circle);
+  }
+
+  const tableFragment = document.createDocumentFragment();
+  for (const record of model.records) {
+    const row = document.createElement('tr');
+    const dateCell = document.createElement('td');
+    const valueCell = document.createElement('td');
+    dateCell.textContent = record.date.slice(0, 7);
+    valueCell.textContent = `${formatNumber(record.value)}명`;
+    row.append(dateCell, valueCell);
+    tableFragment.appendChild(row);
+  }
+  elements.demandChartTableBody.appendChild(tableFragment);
+
+  setElementHidden(elements.demandChartWrap, false);
+  setElementHidden(elements.demandChartDetails, false);
+  setElementHidden(elements.demandChartEmpty, true);
+  elements.demandChartSummary.textContent =
+    `${model.records[0].date.slice(0, 7)}부터 ` +
+    `${model.records.at(-1).date.slice(0, 7)}까지 ${model.records.length}개월, ` +
+    `최소 ${formatNumber(model.minimumValue)}명 · 최대 ${formatNumber(model.maximumValue)}명`;
+
+  return model;
+}
+
+function normalizeExportRows(items) {
+  return (Array.isArray(items) ? items : [])
+    .map((item) => ({
+      id: String(getDataDocumentId(item) || ''),
+      date: getDataDate(item),
+      value: Number(item?.value),
+      memo: String(item?.memo ?? ''),
+    }))
+    .filter(
+      (item) =>
+        /^\d{4}-\d{2}-01$/.test(item.date) &&
+        Number.isSafeInteger(item.value) &&
+        item.value >= 0
+    )
+    .sort((left, right) => left.date.localeCompare(right.date));
+}
+
+function escapeCsvCell(value, { protectFormula = false } = {}) {
+  let text = String(value ?? '');
+  if (protectFormula && /^[\s]*[=+\-@]/.test(text)) {
+    text = `'${text}`;
+  }
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function serializeDataCsv(items) {
+  const rows = normalizeExportRows(items);
+  const lines = [EXPORT_FIELDS.join(',')];
+  for (const row of rows) {
+    lines.push(
+      EXPORT_FIELDS.map((field) =>
+        escapeCsvCell(row[field], {
+          protectFormula: field === 'id' || field === 'date' || field === 'memo',
+        })
+      ).join(',')
+    );
+  }
+  return `\uFEFF${lines.join('\r\n')}\r\n`;
+}
+
+function serializeDataJson(items) {
+  return `${JSON.stringify(normalizeExportRows(items), null, 2)}\n`;
+}
+
+function setExportButtonsEnabled(enabled) {
+  elements.downloadCsvButton.disabled = !enabled;
+  elements.downloadJsonButton.disabled = !enabled;
+}
+
+function downloadDataFile(format) {
+  const rows = normalizeExportRows(currentDataItems);
+  if (!rows.length) {
+    setStatus(elements.dataMessage, '다운로드할 데이터가 없습니다.', 'error');
+    return;
+  }
+
+  const isCsv = format === 'csv';
+  const content = isCsv ? serializeDataCsv(rows) : serializeDataJson(rows);
+  const mimeType = isCsv
+    ? 'text/csv;charset=utf-8'
+    : 'application/json;charset=utf-8';
+  const filename = isCsv
+    ? 'ktx-monthly-data.csv'
+    : 'ktx-monthly-data.json';
+  const objectUrl = URL.createObjectURL(new Blob([content], { type: mimeType }));
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  link.hidden = true;
+  document.body.appendChild(link);
+
+  try {
+    link.click();
+    setStatus(
+      elements.dataMessage,
+      `전체 ${rows.length}건을 ${format.toUpperCase()} 파일로 만들었습니다.`,
+      'success'
+    );
+  } finally {
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 function isProtectedSeedData(item) {
   const date = getDataDate(item);
   return /^\d{4}-\d{2}-\d{2}$/.test(date) && date <= SEED_DATA_END_DATE;
@@ -476,7 +807,10 @@ async function loadDataItems({ silent = false } = {}) {
 
   try {
     const items = await fetchDataItems();
+    currentDataItems = [...items];
     renderDataItems(items);
+    renderDemandChart(items);
+    setExportButtonsEnabled(items.length > 0);
 
     if (!silent) {
       setStatus(
@@ -486,6 +820,11 @@ async function loadDataItems({ silent = false } = {}) {
       );
     }
   } catch (error) {
+    currentDataItems = [];
+    setExportButtonsEnabled(false);
+    renderDemandChart([]);
+    elements.demandChartEmpty.textContent =
+      '월별 수요 그래프를 불러오지 못했습니다.';
     console.error('GET /api/data 오류:', error);
     setStatus(
       elements.dataMessage,
@@ -1014,6 +1353,8 @@ function initializeApp() {
     for (const button of [
       elements.refreshSummaryButton,
       elements.refreshDataButton,
+      elements.downloadCsvButton,
+      elements.downloadJsonButton,
       elements.addDataButton,
       elements.submitButton,
       elements.refreshButton,
@@ -1024,12 +1365,18 @@ function initializeApp() {
   }
 
   elements.refreshSummaryButton.addEventListener('click', () => {
-    loadSummary();
+    Promise.all([loadSummary(), loadDataItems({ silent: true })]);
   });
 
   elements.dataForm.addEventListener('submit', handleDataSubmit);
   elements.refreshDataButton.addEventListener('click', () => {
     loadDataItems();
+  });
+  elements.downloadCsvButton.addEventListener('click', () => {
+    downloadDataFile('csv');
+  });
+  elements.downloadJsonButton.addEventListener('click', () => {
+    downloadDataFile('json');
   });
 
   elements.chatForm.addEventListener('submit', handleChatSubmit);

@@ -53,6 +53,11 @@ fs.copyFileSync(
   path.join(distJsDir, 'app.js')
 );
 
+fs.copyFileSync(
+  path.join(__dirname, 'js', 'theme.js'),
+  path.join(distJsDir, 'theme.js')
+);
+
 const config = `window.APP_CONFIG = Object.freeze({
   API_BASE_URL: ${JSON.stringify(apiBaseUrl)}
 });

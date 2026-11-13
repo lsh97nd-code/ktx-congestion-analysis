@@ -6,8 +6,10 @@
 /* ---------- 1. 기본 변수 ---------- */
 :root {
   --color-bg: #f4f7fb;
+  --color-bg-accent: #edf3ff;
   --color-surface: #ffffff;
   --color-surface-soft: #f8fafc;
+  --color-surface-strong: #ffffff;
   --color-border: #dbe4ee;
   --color-border-strong: #c6d3e1;
 
@@ -24,6 +26,22 @@
 
   --color-danger: #c53b3b;
   --color-danger-soft: #fff0f0;
+  --color-primary-border: #b8c8e9;
+  --color-primary-hover: #dce8ff;
+  --color-trend-border: #c8d7f5;
+  --color-trend-start: #f4f8ff;
+  --color-input-focus: #fcfdff;
+  --color-row-border: #edf1f5;
+  --color-disabled: #f5f7f9;
+  --color-success-border: #cde6dc;
+  --color-success-title: #0a7453;
+  --color-answer-start: #f5fcf9;
+  --color-answer-meta-border: #dce7e2;
+  --color-load-border: #c9d7ec;
+  --color-loaded-border: #d9e5f5;
+  --color-chart-grid: #dbe4ee;
+  --color-chart-line: #2457c5;
+  --color-focus: rgba(36, 87, 197, 0.28);
 
   --shadow-sm: 0 4px 14px rgba(27, 48, 78, 0.07);
   --shadow-md: 0 12px 28px rgba(27, 48, 78, 0.1);
@@ -33,6 +51,44 @@
   --radius-lg: 20px;
 
   --content-width: 980px;
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #08111f;
+  --color-bg-accent: #10233f;
+  --color-surface: #101b2d;
+  --color-surface-soft: #16243a;
+  --color-surface-strong: #0d1728;
+  --color-border: #2b3c55;
+  --color-border-strong: #415570;
+  --color-text: #edf4ff;
+  --color-text-soft: #bdc9da;
+  --color-text-muted: #93a4b9;
+  --color-primary: #79a9ff;
+  --color-primary-dark: #b8d1ff;
+  --color-primary-soft: #1a3153;
+  --color-success: #52d6a5;
+  --color-success-soft: #12382f;
+  --color-danger: #ff9696;
+  --color-danger-soft: #402126;
+  --color-primary-border: #48658c;
+  --color-primary-hover: #24446f;
+  --color-trend-border: #3b5680;
+  --color-trend-start: #182d4c;
+  --color-input-focus: #12213a;
+  --color-row-border: #263750;
+  --color-disabled: #1b2739;
+  --color-success-border: #295749;
+  --color-success-title: #75e4ba;
+  --color-answer-start: #123028;
+  --color-answer-meta-border: #315749;
+  --color-load-border: #3a5272;
+  --color-loaded-border: #334a69;
+  --color-chart-grid: #30445f;
+  --color-chart-line: #8cb6ff;
+  --color-focus: rgba(121, 169, 255, 0.48);
+  --shadow-sm: 0 5px 18px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 14px 32px rgba(0, 0, 0, 0.3);
 }
 
 /* ---------- 2. 기본 리셋 ---------- */
@@ -48,7 +104,7 @@ body {
   margin: 0;
   min-width: 320px;
   background:
-    linear-gradient(180deg, #edf3ff 0, rgba(237, 243, 255, 0) 340px),
+    linear-gradient(180deg, var(--color-bg-accent) 0, rgba(0, 0, 0, 0) 340px),
     var(--color-bg);
   color: var(--color-text);
   font-family:
@@ -110,6 +166,16 @@ textarea {
   top: -95px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.header-toolbar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .eyebrow {
@@ -121,6 +187,29 @@ textarea {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.theme-toggle {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  background: rgba(8, 17, 31, 0.2);
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 800;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  background: rgba(8, 17, 31, 0.35);
+}
+
+.header-toolbar .eyebrow {
+  margin-bottom: 0;
 }
 
 .app-header h1 {
@@ -165,6 +254,7 @@ main {
 .data-section,
 .chat-section,
 .history-section {
+  min-width: 0;
   padding: 28px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -203,7 +293,7 @@ main {
 #refresh-summary-button {
   flex: 0 0 auto;
   padding: 10px 16px;
-  border: 1px solid #b8c8e9;
+  border: 1px solid var(--color-primary-border);
   border-radius: 10px;
   background: var(--color-primary-soft);
   color: var(--color-primary-dark);
@@ -215,7 +305,7 @@ main {
 
 #refresh-summary-button:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #dce8ff;
+  background: var(--color-primary-hover);
 }
 
 #summary-message {
@@ -246,7 +336,7 @@ main {
   padding: 17px 16px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, #ffffff 0%, var(--color-surface-soft) 100%);
+  background: linear-gradient(180deg, var(--color-surface-strong) 0%, var(--color-surface-soft) 100%);
 }
 
 .summary-card-wide {
@@ -278,8 +368,8 @@ main {
 }
 
 .summary-card-trend {
-  border-color: #c8d7f5;
-  background: linear-gradient(180deg, #f4f8ff 0%, #ffffff 100%);
+  border-color: var(--color-trend-border);
+  background: linear-gradient(180deg, var(--color-trend-start) 0%, var(--color-surface-strong) 100%);
 }
 
 .summary-card-trend strong {
@@ -300,6 +390,138 @@ main {
   font-size: 0.82rem;
 }
 
+.demand-chart-panel {
+  min-width: 0;
+  margin: 22px 0 0;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
+}
+
+.chart-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.chart-heading h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.chart-heading p {
+  margin: 4px 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.86rem;
+}
+
+.chart-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.demand-chart {
+  display: block;
+  width: 100%;
+  min-width: 680px;
+  height: auto;
+  border-radius: 10px;
+  background: var(--color-surface-strong);
+}
+
+.chart-grid-line {
+  stroke: var(--color-chart-grid);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-line {
+  stroke: var(--color-chart-line);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-point {
+  fill: var(--color-surface-strong);
+  stroke: var(--color-chart-line);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-axis-label {
+  fill: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.chart-empty {
+  margin: 0;
+  padding: 28px 16px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 10px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.chart-details {
+  margin-top: 14px;
+}
+
+.chart-details summary {
+  color: var(--color-primary-dark);
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.chart-table-wrap {
+  max-height: 300px;
+  margin-top: 10px;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.chart-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface-strong);
+  font-size: 0.85rem;
+}
+
+.chart-table th,
+.chart-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--color-row-border);
+  text-align: left;
+}
+
+.chart-table th {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface-soft);
+  color: var(--color-text-soft);
+}
+
+.chart-table th:last-child,
+.chart-table td:last-child {
+  text-align: right;
+}
+
+.demand-chart-panel figcaption {
+  margin-top: 12px;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
 
 /* ---------- 7. 데이터 관리(CRUD) ---------- */
 .data-header-row {
@@ -313,6 +535,14 @@ main {
   margin-bottom: 16px;
 }
 
+.data-header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .data-heading code {
   padding: 1px 5px;
   border-radius: 5px;
@@ -321,6 +551,7 @@ main {
   font-size: 0.9em;
 }
 
+.data-secondary-button,
 #refresh-data-button,
 #add-data-button,
 .data-delete-button {
@@ -332,17 +563,23 @@ main {
     border-color 0.15s ease;
 }
 
-#refresh-data-button {
+#refresh-data-button,
+.data-secondary-button {
   flex: 0 0 auto;
   padding: 10px 16px;
-  border: 1px solid #b8c8e9;
+  border: 1px solid var(--color-primary-border);
   background: var(--color-primary-soft);
   color: var(--color-primary-dark);
 }
 
-#refresh-data-button:hover:not(:disabled) {
+.data-secondary-button {
+  padding: 10px 13px;
+}
+
+#refresh-data-button:hover:not(:disabled),
+.data-secondary-button:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #dce8ff;
+  background: var(--color-primary-hover);
 }
 
 .data-form {
@@ -378,7 +615,7 @@ main {
   border: 1px solid var(--color-border-strong);
   border-radius: 10px;
   outline: none;
-  background: #ffffff;
+  background: var(--color-surface-strong);
   color: var(--color-text);
 }
 
@@ -441,20 +678,20 @@ main {
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  background: #ffffff;
+  background: var(--color-surface-strong);
   font-size: 0.9rem;
 }
 
 .data-table th,
 .data-table td {
   padding: 12px 13px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid var(--color-row-border);
   text-align: left;
   vertical-align: middle;
 }
 
 .data-table th {
-  background: #f4f7fb;
+  background: var(--color-surface-soft);
   color: var(--color-text-soft);
   font-size: 0.8rem;
   font-weight: 800;
@@ -487,12 +724,12 @@ main {
 
 .data-delete-button:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #ffe4e4;
+  background: var(--color-danger-soft);
 }
 
 .data-delete-button:disabled {
   border-color: var(--color-border);
-  background: #f5f7f9;
+  background: var(--color-disabled);
   color: var(--color-text-muted);
 }
 
@@ -520,7 +757,7 @@ main {
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   outline: none;
-  background: #ffffff;
+  background: var(--color-surface-strong);
   color: var(--color-text);
   transition:
     border-color 0.18s ease,
@@ -535,7 +772,7 @@ main {
 #message-input:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 4px rgba(36, 87, 197, 0.12);
-  background: #fcfdff;
+  background: var(--color-input-focus);
 }
 
 .form-actions {
@@ -570,14 +807,14 @@ main {
 
 #refresh-conversations-button {
   padding: 10px 16px;
-  border: 1px solid #b8c8e9;
+  border: 1px solid var(--color-primary-border);
   background: var(--color-primary-soft);
   color: var(--color-primary-dark);
 }
 
 #refresh-conversations-button:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #dce8ff;
+  background: var(--color-primary-hover);
 }
 
 /* ---------- 7. 폼 메시지 ---------- */
@@ -604,7 +841,7 @@ main {
 #loading-area {
   margin-top: 18px;
   padding: 14px 16px;
-  border: 1px solid #c8d7f5;
+  border: 1px solid var(--color-trend-border);
   border-radius: var(--radius-md);
   background: var(--color-primary-soft);
   color: var(--color-primary-dark);
@@ -638,15 +875,15 @@ main {
 #answer-area {
   margin-top: 18px;
   padding: 22px;
-  border: 1px solid #cde6dc;
+  border: 1px solid var(--color-success-border);
   border-left: 5px solid var(--color-success);
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, #f5fcf9 0%, #ffffff 100%);
+  background: linear-gradient(180deg, var(--color-answer-start) 0%, var(--color-surface-strong) 100%);
 }
 
 #answer-area h3 {
   margin: 0 0 12px;
-  color: #0a7453;
+  color: var(--color-success-title);
   font-size: 1.1rem;
 }
 
@@ -666,9 +903,9 @@ main {
 .answer-meta > div {
   min-width: 0;
   padding: 11px 13px;
-  border: 1px solid #dce7e2;
+  border: 1px solid var(--color-answer-meta-border);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--color-surface);
 }
 
 .answer-meta dt {
@@ -722,7 +959,7 @@ main {
   padding: 18px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: #ffffff;
+  background: var(--color-surface-strong);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
@@ -780,9 +1017,9 @@ main {
 
 .conversation-load-button {
   padding: 9px 14px;
-  border: 1px solid #c9d7ec;
+  border: 1px solid var(--color-load-border);
   border-radius: 9px;
-  background: #f4f8ff;
+  background: var(--color-primary-soft);
   color: var(--color-primary);
   font: inherit;
   font-size: 0.86rem;
@@ -797,7 +1034,7 @@ main {
 .conversation-load-button:hover:not(:disabled) {
   transform: translateY(-1px);
   border-color: #a9c0e3;
-  background: #eaf2ff;
+  background: var(--color-primary-hover);
 }
 
 .conversation-load-button:disabled {
@@ -808,9 +1045,9 @@ main {
 .loaded-conversation {
   margin-top: 14px;
   padding: 14px;
-  border: 1px solid #d9e5f5;
+  border: 1px solid var(--color-loaded-border);
   border-radius: 10px;
-  background: #f8fbff;
+  background: var(--color-surface-soft);
 }
 
 .loaded-conversation-title {
@@ -866,7 +1103,7 @@ main {
 /* ---------- 13. 키보드 접근성 ---------- */
 button:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgba(36, 87, 197, 0.28);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -882,6 +1119,7 @@ textarea:focus-visible {
     border-radius: 16px;
   }
 
+  .summary-section,
   .data-section,
   .chat-section,
   .history-section {
@@ -897,6 +1135,20 @@ textarea:focus-visible {
   #refresh-summary-button,
   #refresh-data-button {
     width: 100%;
+  }
+
+  .data-header-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  #refresh-data-button {
+    grid-column: 1 / -1;
+  }
+
+  .demand-chart {
+    min-width: 620px;
   }
 
   .data-form-grid {
@@ -953,6 +1205,7 @@ textarea:focus-visible {
     grid-column: auto;
   }
 
+  .summary-section,
   .data-section,
   .chat-section,
   .history-section {
@@ -962,5 +1215,22 @@ textarea:focus-visible {
   #message-input {
     min-height: 110px;
     padding: 14px;
+  }
+
+  .header-toolbar {
+    align-items: flex-start;
+  }
+
+  .theme-toggle {
+    padding: 7px 10px;
+    font-size: 0.78rem;
+  }
+
+  .data-header-actions {
+    grid-template-columns: 1fr;
+  }
+
+  #refresh-data-button {
+    grid-column: auto;
   }
 }
